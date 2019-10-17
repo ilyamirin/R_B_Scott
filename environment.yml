@@ -1,0 +1,7 @@
+name: bdb
+channels:
+  - defaults
+dependencies:
+  - python=3.7
+prefix: /home/alexey/.conda/envs/bdb
+
