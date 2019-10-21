@@ -4,6 +4,7 @@ from numpy.fft import fft, fftfreq, fftshift
 import scipy
 import matplotlib.pyplot as plt
 import datetime
+from math import log2, pow
 
 # rate = 44100
 rate = 44100
@@ -13,6 +14,17 @@ plt.ion()
 fig, (time_audiodata_ax, freq_range_ax) = plt.subplots(2, 1)
 plt.show()
 blackman = scipy.blackman(rate)
+
+A4 = 440
+C0 = A4 * pow(2, -4.75)
+name = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+
+
+def pitch(freq):
+    h = round(12 * log2(freq / C0))
+    octave = h // 12
+    n = h % 12
+    return name[n] + str(octave)
 
 with sd.Stream(channels=1, samplerate=rate) as s:
     playback_speed_multiplier = 1
@@ -40,6 +52,7 @@ with sd.Stream(channels=1, samplerate=rate) as s:
         freq = freq[:len(freq) // 2]  # keep only first half
         freqPeak = freq[np.where(fft_vals == np.max(fft_vals))[0][0]] + 1
         print("peak frequency: %d Hz" % freqPeak)
+        print(pitch(freqPeak))
 
         freq_range_ax.clear()
         freq_range_ax.plot(freq, fft_vals)
