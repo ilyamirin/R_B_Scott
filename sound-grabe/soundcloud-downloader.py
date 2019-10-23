@@ -1,23 +1,12 @@
+import os.path
 from urllib.request import urlopen
 import requests
 import soundcloud
 
 
-def download_file(url, filename):
-    f = urlopen(url)
-    with open('downloads/%s' % filename, "wb") as song:
-        song.write(f.read())
-
-
-def clean_title(title):
-    allowed = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789-_()$"
-
-    return ''.join(c for c in title if c in allowed)
-
-
 class SoundCloudDownloader:
     def __init__(self):
-        self.client_id = "NmW1FlPaiL94ueEu7oziOWjYEzZzQDcK"  # TODO Create client id
+        self.client_id = "LHzSAKe8eP9Yy3FgBugfBapRPLncO6Ng"
         self.success_downloads = 0
 
     def get_stream_url(self, sid):
@@ -30,14 +19,38 @@ class SoundCloudDownloader:
 
     def download(self, url, title='mem'):
         if url:
-            print('Downloading: %s' % title)
-            html = requests.get(url)
-            download_file(url, "%s.mp3" % clean_title(title))
-            self.success_downloads += 1
+            print('Check: %s' % title)
+            if not os.path.exists("downloads/%s.mp3" % clean_title(title)):
+                print('Downloading: %s' % title)
+                html = requests.get(url)
+                if download_file(url, "%s.mp3" % clean_title(title)):
+                    self.success_downloads += 1
 
-            return True
+                    return True
+            else:
+                print('Skip: %s' % title)
 
         return False
+
+
+def download_file(url, filename):
+    try:
+        f = urlopen(url)
+        with open('downloads/%s' % filename, "wb") as song:
+            song.write(f.read())
+
+        return True
+    finally:
+        f = urlopen(url)
+        print("Error occured while downloading file %s" % url)
+
+        return False
+
+
+def clean_title(title):
+    allowed = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789-_()$"
+
+    return ''.join(c for c in title if c in allowed)
 
 
 def main():
@@ -48,7 +61,7 @@ def main():
     sc_downloader = SoundCloudDownloader()
 
     def download():
-        tracks = client.get('/tracks', genres=genre, limit=10, linked_partitioning=1)
+        tracks = client.get('/tracks', genres=genre, limit=100, linked_partitioning=1)
         current_track_index = 0
         while current_track_index <= tracks_count:
             for track in tracks.collection.data:
@@ -58,6 +71,7 @@ def main():
                     return
             next_href = tracks.obj['next_href']
             tracks = client.get(next_href)
+
     download()
 
     print("Success downloads: {0}/{1}".format(sc_downloader.success_downloads, tracks_count))
