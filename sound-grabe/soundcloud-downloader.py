@@ -1,5 +1,5 @@
 import os.path
-from urllib.request import urlopen
+import sys
 import requests
 import soundcloud
 
@@ -34,15 +34,39 @@ class SoundCloudDownloader:
 
 
 def download_file(url, filename):
+    fully_downloaded = False
     try:
-        f = urlopen(url)
         with open('downloads/%s' % filename, "wb") as song:
-            song.write(f.read())
+            response = requests.get(url, stream=True)
+            total = None
+            try:
+                headers = response.headers
+                total = headers._store['content-length'][1]
+            finally:
+                if total is None:
+                    song.write(response.content)
+                else:
+                    downloaded = 0
+                    total = int(total)
+                    for data in response.iter_content(chunk_size=max(int(total / 1000), 1024 * 1024)):
+                        downloaded += len(data)
+                        song.write(data)
+                        done = int(50 * downloaded / total)
+                        sys.stdout.write('\r[{}{}]'.format('█' * done, '.' * (50 - done)))
+                        sys.stdout.flush()
+                    sys.stdout.write('\n')
+                    fully_downloaded = total == downloaded
 
         return True
     finally:
-        f = urlopen(url)
-        print("Error occured while downloading file %s" % url)
+        if fully_downloaded:
+            return True
+        if os.path.exists("downloads/%s" % clean_title(filename)):
+            print("Error occured but file was saving: %s" % filename)
+
+            return True
+
+        print("Error occured while saving file: %s" % filename)
 
         return False
 
