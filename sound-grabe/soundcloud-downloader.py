@@ -2,6 +2,7 @@ import os.path
 import sys
 import requests
 import soundcloud
+from reindexer import reindex_exist_tracks
 
 
 class SoundCloudDownloader:
@@ -19,16 +20,12 @@ class SoundCloudDownloader:
 
     def download(self, url, title='mem'):
         if url:
-            print('Check: %s' % title)
-            if not os.path.exists("downloads/%s.mp3" % clean_title(title)):
-                print('Downloading: %s' % title)
-                html = requests.get(url)
-                if download_file(url, "%s.mp3" % clean_title(title)):
-                    self.success_downloads += 1
+            print('Downloading: %s' % title)
+            html = requests.get(url)
+            if download_file(url, "%s.mp3" % clean_title(title)):
+                self.success_downloads += 1
 
-                    return True
-            else:
-                print('Skip: %s' % title)
+                return True
 
         return False
 
@@ -87,12 +84,20 @@ def main():
     def download():
         tracks = client.get('/tracks', genres=genre, limit=100, linked_partitioning=1)
         current_track_index = 0
+        exist_tracks = reindex_exist_tracks()
+
         while current_track_index <= tracks_count:
             for track in tracks.collection.data:
+                if clean_title(track.title) in exist_tracks:
+                    print('Track %s already exist' % track.title)
+                    continue
+
                 if sc_downloader.download(sc_downloader.get_stream_url(track.id), track.title):
                     current_track_index += 1
+
                 if current_track_index == tracks_count:
                     return
+
             next_href = tracks.obj['next_href']
             tracks = client.get(next_href)
 
