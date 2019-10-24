@@ -4,6 +4,8 @@ import requests
 import soundcloud
 from reindexer import reindex_exist_tracks
 
+dir_name = 'downloads/'
+
 
 class SoundCloudDownloader:
     def __init__(self):
@@ -75,6 +77,9 @@ def clean_title(title):
 
 
 def main():
+    if not os.path.isdir(dir_name):
+        os.makedirs(dir_name)
+
     tracks_count = int(input("Enter tracks count for download: "))
     genre = input("Enter genre: ")
 
