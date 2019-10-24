@@ -1,7 +1,0 @@
-name: bdb
-channels:
-  - defaults
-dependencies:
-  - python=3.7
-  - numpy
-  - matplotlib
