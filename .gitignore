@@ -1,5 +1,6 @@
 .idea
 .venv
+.*-venv
 mp3/*.mp3
 sound-grabe/downloads
 __pycache__
