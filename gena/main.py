@@ -71,7 +71,7 @@ def main():
     dataset = dataset.map(lambda t: t[0])
     dataset = dataset.unbatch()
     dataset = dataset.batch(SAMPLE_SIZE, drop_remainder=True).batch(BATCH_SIZE).prefetch(tf.data.experimental.AUTOTUNE)
-    dataset = dataset.zip((dataset, dataset)).take(1)
+    dataset = dataset.zip((dataset, dataset)).take(2)
 
     model = keras.Sequential([
         keras.layers.LSTM(SAMPLE_SIZE, input_shape=(None, 1), return_sequences=True, dropout=.3),
@@ -87,16 +87,17 @@ def main():
     x = tf.random.uniform((1, SAMPLE_SIZE, 1))
     x = tf.data.Dataset.from_tensors(x)
     res = []
-    for i in range(SAMPLE_SIZE*10):
-        print(str(i) + '/' + str(SAMPLE_SIZE*10))
-        print('\n')
-        print(i / (SAMPLE_SIZE*10))
-        print('\n')
+    for i in range(100*5):
+        # print(str(i) + '/' + str(SAMPLE_SIZE*10))
+        # print('\n')
+        # print(i / (SAMPLE_SIZE*10))
+        # print('\n')
         answ = model.predict(x)
+        # print(answ)
         x = tf.reshape(answ, (1, SAMPLE_SIZE, 1))
         res.append(x)
 
-    encoded = tf.audio.encode_wav(tf.reshape(res, (len(res), 1)), 44200)
+    encoded = tf.audio.encode_wav(tf.reshape(res, (-1, 1)), 44200)
     tf.io.write_file("meh.wav", encoded)
     print('end')
 
