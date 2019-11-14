@@ -2,8 +2,8 @@ import math
 
 import tensorflow as tf
 from tensorflow import keras
-from batch_logger import NBatchLogger
-from logger import logger
+from .batch_logger import NBatchLogger
+from .logger import logger
 
 
 class GenaModel(tf.keras.Sequential):

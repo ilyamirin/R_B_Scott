@@ -2,7 +2,7 @@ import tensorflow as tf
 import argparse
 from model.ops import decode_wav
 from model.gena import GenaModel
-import logger
+import model.logger
 # Error without this line.
 physical_devices = tf.config.experimental.list_physical_devices('GPU')
 tf.config.experimental.set_memory_growth(physical_devices[0], True)
@@ -22,7 +22,7 @@ def parse_arguments():
 
 def main():
     known_args, unknown_args = parse_arguments()
-    logger.configure_logger()
+    model.logger.configure_logger()
 
     dataset = tf.data.Dataset.list_files(known_args.data_dir + '*.wav')
     # float32
