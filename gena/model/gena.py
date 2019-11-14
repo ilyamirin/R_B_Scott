@@ -28,10 +28,12 @@ class GenaModel(tf.keras.Sequential):
         for layer in layers:
             self.add(layer)
 
-    def train(self, dataset):
+    def train(self, dataset, checkpoint_path, checkpoint_period):
         """Train model"""
 
-        self.fit(dataset, epochs=1, verbose=2, steps_per_epoch=None, callbacks=[NBatchLogger()])
+        cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path, verbose=1, save_weights_only=True,
+                                                         save_freq=checkpoint_period)
+        self.fit(dataset, epochs=1, verbose=2, steps_per_epoch=None, callbacks=[NBatchLogger(), cp_callback])
 
     def generate_wav(self, samples, filename):
         """Generate wav file
