@@ -9,6 +9,7 @@ SAMPLE_SIZE = SAMPLING_RATE//100
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Generation")
     parser.add_argument('checkpoint_path', type=str)
+    parser.add_argument('--duration', type=int, default=5)
     return parser.parse_known_args()
 
 
@@ -17,8 +18,7 @@ def main():
     logger.configure_logger()
     model = GenaModel(SAMPLE_SIZE)
     model.load_weights(known_args.checkpoint_path)
-    # 5 seconds
-    generate_samples_seconds = SAMPLING_RATE * 5
+    generate_samples_seconds = SAMPLING_RATE * known_args.duration
     model.generate_wav(generate_samples_seconds, "gen.wav")
     print('generated')
 
