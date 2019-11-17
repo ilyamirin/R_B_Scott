@@ -1,0 +1,1 @@
+(WIP) Subproject - a simple autoencoder which tries to reproduce given MIDI-files.
