@@ -5,7 +5,7 @@ import numpy as np
 import pypianoroll
 import matplotlib.pyplot as plt
 
-dataset = pypianoroll.Multitrack('santana.mid')
+dataset = pypianoroll.Multitrack('birdbran.mid')
 # plt.imshow(dataset.tracks[0].pianoroll)
 # plt.gray()
 # plt.show()
@@ -41,7 +41,7 @@ encoder = Model(input_layer, encoded)
 encoded_input = Input(shape=(encoding_dim,))
 decoder_layer = autoencoder.layers[-1]
 decoder = Model(encoded_input, decoder_layer(encoded_input))
-autoencoder.compile(optimizer='adadelta', loss='binary_crossentropy')
+autoencoder.compile(optimizer='adam', loss='mean_squared_error')
 
 
 # from keras.datasets import mnist
@@ -53,17 +53,17 @@ autoencoder.compile(optimizer='adadelta', loss='binary_crossentropy')
 # x_test = x_test.reshape((len(x_test), np.prod(x_test.shape[1:])))
 
 autoencoder.fit(input_data, input_data,
-                epochs=200,
-                batch_size=256,
+                epochs=150,
+                batch_size=1,
                 shuffle=True,
                 validation_data=(test_data, test_data))
 
-encoded_imgs = encoder.predict(input_data)
-decoded_imgs = decoder.predict(encoded_imgs)
+decoded_imgs = autoencoder.predict(input_data)
 
+iterations = list(np.random.random_integers(0, input_data.shape[0], 10))
 n = 10  # how many digits we will display
 plt.figure(figsize=(20, 4))
-for i in range(n):
+for i in range(10):
     # display original
     ax = plt.subplot(2, n, i + 1)
     plt.imshow(input_data[i].reshape(beat_resolution, input_dim))
