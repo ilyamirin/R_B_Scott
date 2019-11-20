@@ -5,7 +5,7 @@ import numpy as np
 import pypianoroll
 import matplotlib.pyplot as plt
 
-dataset = pypianoroll.Multitrack('birdbran.mid')
+dataset = pypianoroll.Multitrack('santana.mid')
 # plt.imshow(dataset.tracks[0].pianoroll)
 # plt.gray()
 # plt.show()
@@ -53,8 +53,8 @@ autoencoder.compile(optimizer='adam', loss='mean_squared_error')
 # x_test = x_test.reshape((len(x_test), np.prod(x_test.shape[1:])))
 
 autoencoder.fit(input_data, input_data,
-                epochs=150,
-                batch_size=1,
+                epochs=1,
+                batch_size=8,
                 shuffle=True,
                 validation_data=(test_data, test_data))
 
@@ -66,14 +66,14 @@ plt.figure(figsize=(20, 4))
 for i in range(10):
     # display original
     ax = plt.subplot(2, n, i + 1)
-    plt.imshow(input_data[i].reshape(beat_resolution, input_dim))
+    plt.imshow(input_data[iterations[i]].reshape(beat_resolution, input_dim))
     plt.gray()
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
 
     # display reconstruction
     ax = plt.subplot(2, n, i + 1 + n)
-    plt.imshow(decoded_imgs[i].reshape(beat_resolution, input_dim))
+    plt.imshow(decoded_imgs[iterations[i]].reshape(beat_resolution, input_dim))
     plt.gray()
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
