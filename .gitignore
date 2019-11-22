@@ -4,7 +4,8 @@
 mp3/*.mp3
 sound-grabe/downloads
 __pycache__
-datasets
+datasets/*
+!datasets/bdb-midi-dataset/**
 Music
 *.mid
 *.midi
