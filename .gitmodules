@@ -1,6 +1,4 @@
 [submodule "experiments/tensorflow-wavenet"]
 	path = experiments/tensorflow-wavenet
 	url = git@github.com:ibab/tensorflow-wavenet.git
-[submodule "datasets/bdb-midi-dataset"]
-	path = datasets/bdb-midi-dataset
-	url = git@gitlab.com:outeasts/bdb-midi-dataset.git
+
