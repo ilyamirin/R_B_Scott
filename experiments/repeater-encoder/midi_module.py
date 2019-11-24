@@ -1,29 +1,24 @@
 import mido
-import math
-import numpy as np
-
-def find_nearest(array,value):
-    idx = np.searchsorted(array, value, side="left")
-    if idx > 0 and (idx == len(array) or math.fabs(value - array[idx-1]) < math.fabs(value - array[idx])):
-        return array[idx-1]
-    else:
-        return array[idx]
+import utils
 
 def read_midi_file(filename):
     # define some midi constants
     CONTROL_VOLUME = 7
-    MIDI_CHANNELS_NUMBER = 15
+    MIDI_CHANNELS_NUMBER = 16
+    MIDI_NOTES_NUMBER = 128
     INITIAL_VOLUME = 0
     TEMPO = 500000
     TIME_SIGNATURE = (4, 4)
-    QUANTIZATION = 16
-    NOTE_LENGTHS = [1, 1.33, 2, 2.67, 4, 5.33, 8, 10.67, 16, 32]
+    NOTE_LENGTHS = utils.create_note_lengths(quantization = 32, use_dots = True)
 
     mid = mido.MidiFile(filename)
-    notes = [[]] * MIDI_CHANNELS_NUMBER
-    volumes_by_channels = [INITIAL_VOLUME] * MIDI_CHANNELS_NUMBER
-    times_by_channels = [0] * MIDI_CHANNELS_NUMBER
+    notes = [[] for _ in range( MIDI_CHANNELS_NUMBER)]
+    volumes_by_channels = [INITIAL_VOLUME for _ in range(MIDI_CHANNELS_NUMBER)]
+    # times_by_channels = [0] * MIDI_CHANNELS_NUMBER
+    current_time = 0
+    notes_start_times = [[None for _ in range(MIDI_NOTES_NUMBER)] for _ in range(MIDI_CHANNELS_NUMBER)]
     for msg in mid:
+        note_length = 0
         if msg.is_meta:
             print(msg)
             if (msg.type == 'set_tempo'):
@@ -33,22 +28,33 @@ def read_midi_file(filename):
         else:
             print(msg)
             if (msg.type == 'control_change'):
-                if (msg.control==CONTROL_VOLUME):
+                if (msg.control == CONTROL_VOLUME):
                     volumes_by_channels[msg.channel] = msg.value
+            if (msg.time != 0):
+                current_time += msg.time
             if (msg.type == 'note_on'):
                 # if (msg.velocity==0):
                 #     treat like a note off
-                notes[msg.channel].append(msg.note)
-            if (msg.time != 0):
+                notes_start_times[msg.channel][msg.note] = current_time
+            if (msg.type == 'note_off'):
+                note_time = current_time - notes_start_times[msg.channel][msg.note]
                 microseconds_per_denominator = TEMPO * (4 / TIME_SIGNATURE[1])
                 microseconds_per_bar = microseconds_per_denominator * TIME_SIGNATURE[0]
-                print (find_nearest(NOTE_LENGTHS, (microseconds_per_bar / 1000000) / msg.time))
+                note_length = utils.find_nearest(NOTE_LENGTHS, (microseconds_per_bar / 1000000) / note_time)
+                print(note_length)
+                note = {
+                    'length': note_length,
+                    'note': msg.note,
+                    'volume': msg.velocity,
+                    'noset_time': notes_start_times[msg.channel][msg.note]
+                }
+                notes[msg.channel].append(note.copy())
     print('------------------')
     print(mid.ticks_per_beat)
     print(volumes_by_channels)
     print(notes)
 
-read_midi_file('aerozepp.mid')
+read_midi_file('simple_midi_2_tracks.mid')
 
 import numpy as np
 import pypianoroll
