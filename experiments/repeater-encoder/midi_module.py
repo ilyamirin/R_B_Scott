@@ -1,5 +1,6 @@
 import mido
 import utils
+import math
 
 def read_midi_file(filename):
     # define some midi constants
@@ -9,7 +10,9 @@ def read_midi_file(filename):
     INITIAL_VOLUME = 0
     TEMPO = 500000
     TIME_SIGNATURE = (4, 4)
-    NOTE_LENGTHS = utils.create_note_lengths(quantization = 32, use_dots = True)
+    QUANTIZATION = 32
+    GRID_SIZE = QUANTIZATION * 2
+    NOTE_LENGTHS = utils.create_note_lengths(quantization = QUANTIZATION, use_dots = True)
 
     mid = mido.MidiFile(filename)
     notes = [[] for _ in range( MIDI_CHANNELS_NUMBER)]
@@ -46,12 +49,13 @@ def read_midi_file(filename):
                     'length': note_length,
                     'note': msg.note,
                     'volume': msg.velocity,
-                    'noset_time': notes_start_times[msg.channel][msg.note]
+                    'onset_time': {
+                        'bar': math.floor(current_time / (microseconds_per_bar / 1000000)),
+                        'cell': notes_start_times[msg.channel][msg.note] / ((microseconds_per_bar / 1000000) / GRID_SIZE)
+                    }
                 }
                 notes[msg.channel].append(note.copy())
     print('------------------')
-    print(mid.ticks_per_beat)
-    print(volumes_by_channels)
     print(notes)
 
 read_midi_file('simple_midi_2_tracks.mid')
