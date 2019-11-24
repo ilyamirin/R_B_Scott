@@ -47,15 +47,18 @@ def read_midi_file(filename):
                 seconds_per_bar = microseconds_per_bar / 1000000
                 note_length = utils.find_nearest(NOTE_LENGTHS, seconds_per_bar / note_time)
                 print(note_length)
+                print(notes_start_times[msg.channel][msg.note], file=f)
                 print(current_time, file=f)
                 print(seconds_per_bar, file=f)
+                print((notes_start_times[msg.channel][msg.note] % seconds_per_bar), file=f)
+                print(seconds_per_bar / GRID_SIZE, file=f)
                 note = {
                     'length': note_length,
                     'note': msg.note,
                     'volume': msg.velocity,
                     'onset_time': {
                         'bar': math.floor(notes_start_times[msg.channel][msg.note] / seconds_per_bar),
-                        'cell': int(utils.proper_round((notes_start_times[msg.channel][msg.note] % seconds_per_bar) / (seconds_per_bar / GRID_SIZE)))
+                        'cell': round((notes_start_times[msg.channel][msg.note] % seconds_per_bar) / (seconds_per_bar / GRID_SIZE))
                     }
                 }
                 print(note, file=f)
@@ -63,7 +66,7 @@ def read_midi_file(filename):
     print('------------------')
     print(notes)
 
-read_midi_file('simple_midi_2_tracks.mid')
+read_midi_file('aerozepp.mid')
 
 import numpy as np
 import pypianoroll
