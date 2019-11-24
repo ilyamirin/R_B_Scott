@@ -20,16 +20,17 @@ def read_midi_file(filename):
     # times_by_channels = [0] * MIDI_CHANNELS_NUMBER
     current_time = 0
     notes_start_times = [[None for _ in range(MIDI_NOTES_NUMBER)] for _ in range(MIDI_CHANNELS_NUMBER)]
+    f = open("log.txt", "w+")
     for msg in mid:
         note_length = 0
         if msg.is_meta:
-            print(msg)
+            print(msg, file=f)
             if (msg.type == 'set_tempo'):
                 TEMPO = msg.tempo
             if (msg.type == 'time_signature'):
                 TIME_SIGNATURE = (msg.numerator, msg.denominator)
         else:
-            print(msg)
+            print(msg, file=f)
             if (msg.type == 'control_change'):
                 if (msg.control == CONTROL_VOLUME):
                     volumes_by_channels[msg.channel] = msg.value
@@ -43,17 +44,21 @@ def read_midi_file(filename):
                 note_time = current_time - notes_start_times[msg.channel][msg.note]
                 microseconds_per_denominator = TEMPO * (4 / TIME_SIGNATURE[1])
                 microseconds_per_bar = microseconds_per_denominator * TIME_SIGNATURE[0]
-                note_length = utils.find_nearest(NOTE_LENGTHS, (microseconds_per_bar / 1000000) / note_time)
+                seconds_per_bar = microseconds_per_bar / 1000000
+                note_length = utils.find_nearest(NOTE_LENGTHS, seconds_per_bar / note_time)
                 print(note_length)
+                print(current_time, file=f)
+                print(seconds_per_bar, file=f)
                 note = {
                     'length': note_length,
                     'note': msg.note,
                     'volume': msg.velocity,
                     'onset_time': {
-                        'bar': math.floor(current_time / (microseconds_per_bar / 1000000)),
-                        'cell': notes_start_times[msg.channel][msg.note] / ((microseconds_per_bar / 1000000) / GRID_SIZE)
+                        'bar': math.floor(notes_start_times[msg.channel][msg.note] / seconds_per_bar),
+                        'cell': int(utils.proper_round((notes_start_times[msg.channel][msg.note] % seconds_per_bar) / (seconds_per_bar / GRID_SIZE)))
                     }
                 }
+                print(note, file=f)
                 notes[msg.channel].append(note.copy())
     print('------------------')
     print(notes)

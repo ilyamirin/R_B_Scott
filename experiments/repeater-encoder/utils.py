@@ -36,8 +36,14 @@ def create_note_lengths(quantization = 16, use_dots = True):
     result = sorted(i for i in result if i <= quantization)
     return result
 
+def proper_round(num, dec=0):
+    num = str(num)[:str(num).index('.')+dec+2]
+    if num[-1]>='5':
+        return float(num[:-2-(not dec)]+str(int(num[-2-(not dec)])+1))
+    return float(num[:-1])
 
 utils = Namespace(
     find_nearest = find_nearest,
     create_note_lengths = create_note_lengths,
+    proper_round = proper_round,
 )
