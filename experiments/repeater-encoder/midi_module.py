@@ -1,6 +1,7 @@
 import mido
 import utils
 import math
+import os
 import numpy as np
 
 # define some midi constants
@@ -64,6 +65,24 @@ def read_midi_file(filename, log_to_file = False):
                 if (log_to_file):
                     print(note, file=f)
                 notes[programs[msg.channel]].append(note.copy())
-    return (notes, programs)
+    return notes
 
-read_midi_file('aerozepp.mid', log_to_file=True)
+def read_directories(dirs):
+    result = []
+    for dir in dirs:
+        for root, subdirs, files in os.walk(dir):
+            for file in files:
+                path = root + "\\" + file
+                if (path.endswith('.mid') or path.endswith('.midi')):
+                    result.append(read_midi_file(path))
+    non_empty_instruments = [False for _ in range(MIDI_INSTRUMENTS_NUMBER)]
+    for i in range(MIDI_INSTRUMENTS_NUMBER):
+        for song in result:
+            if song[i] != []:
+                non_empty_instruments[i] = True
+    for i in range(len(result)):
+        result[i] = [x for index, x in enumerate(result[i]) if non_empty_instruments[index] == True]
+    return result
+
+read_directories(["Music"])
+# notes_to_3d_piano_rolls(read_midi_file('aerozepp.mid', log_to_file=True))
