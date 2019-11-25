@@ -12,7 +12,7 @@ INITIAL_VOLUME = 0
 TEMPO = 500000
 TIME_SIGNATURE = (4, 4)
 QUANTIZATION = 32
-GRID_SIZE = QUANTIZATION * 2
+# GRID_SIZE = QUANTIZATION * 2
 NOTE_LENGTHS = utils.create_note_lengths(quantization=QUANTIZATION, use_dots=True)
 
 def read_midi_file(filename, log_to_file = False):
@@ -59,7 +59,7 @@ def read_midi_file(filename, log_to_file = False):
                     'volume': msg.velocity,
                     'onset_time': {
                         'bar': math.floor(notes_start_times[programs[msg.channel]][msg.note] / seconds_per_bar),
-                        'cell': round((notes_start_times[programs[msg.channel]][msg.note] % seconds_per_bar) / (seconds_per_bar / GRID_SIZE))
+                        'cell': round((notes_start_times[programs[msg.channel]][msg.note] % seconds_per_bar) / (seconds_per_bar / QUANTIZATION))
                     }
                 }
                 if (log_to_file):
@@ -84,5 +84,18 @@ def read_directories(dirs):
         result[i] = [x for index, x in enumerate(result[i]) if non_empty_instruments[index] == True]
     return result
 
-read_directories(["Music"])
+def notes_to_3d_piano_rolls(songs):
+    SONG_LENGTH = 2 #song length in bars
+    result = [[np.zeros(shape=(QUANTIZATION, MIDI_NOTES_NUMBER, len(songs[0]))) for _ in range(SONG_LENGTH)] for __ in range(len(songs))]
+    for song_idx,song in enumerate(songs):
+        for track_idx,track in enumerate(song):
+            for note_idx,note in enumerate(track):
+                if (note['onset_time']['bar'] < SONG_LENGTH):
+                    for i in range(round(QUANTIZATION / note['length'])):
+                        result[song_idx][note['onset_time']['bar']][note['onset_time']['cell'] + i][note['note']][track_idx] = note['volume']
+    f = open("log_3d.txt", "w+")
+    return result
+
+
+notes_to_3d_piano_rolls(read_directories(["Music"]))
 # notes_to_3d_piano_rolls(read_midi_file('aerozepp.mid', log_to_file=True))
