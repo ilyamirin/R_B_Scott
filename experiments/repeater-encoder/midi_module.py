@@ -104,25 +104,18 @@ def piano_roll_3d_to_midi(song):
         for cell_index, cell in enumerate(bar):
             for note_height_index, note_volumes in enumerate(cell):
                 for track_index, note_volume in enumerate(note_volumes):
-                    if (note_height_index in playing_notes[track_index]):
-                        if (note_volume > 0):
-                            note_lengths[note_height_index][track_index] += 1
-                        if (note_volume == 0 and cell_index > 0 and bar[cell_index - 1][note_height_index][
-                            track_index] > 0):
-                            microseconds_per_denominator = TEMPO * (4 / TIME_SIGNATURE[1])
-                            microseconds_per_bar = microseconds_per_denominator * TIME_SIGNATURE[0]
-                            seconds_per_bar = microseconds_per_bar / 1000000
-                            ticks_per_bar = mido.second2tick(seconds_per_bar, output.ticks_per_beat, TEMPO)
-                            track.append(mido.Message('note_off', channel=track_index, note=note_height_index,
-                                                      velocity=int(note_volume), time=int(round(
-                                    ticks_per_bar / QUANTIZATION * note_lengths[note_height_index][track_index]))))
-                            note_lengths[note_height_index][track_index] = 0
-                            playing_notes[track_index].remove(note_height_index)
+                    if (note_volume > 0):
+                        note_lengths[note_height_index][track_index] += 1
+                    if (note_volume == 0 and cell_index > 0 and bar[cell_index - 1][note_height_index][track_index] > 0):
+                        microseconds_per_denominator = TEMPO * (4 / TIME_SIGNATURE[1])
+                        microseconds_per_bar = microseconds_per_denominator * TIME_SIGNATURE[0]
+                        seconds_per_bar = microseconds_per_bar / 1000000
+                        ticks_per_bar = mido.second2tick(seconds_per_bar, output.ticks_per_beat, TEMPO)
+                        track.append(mido.Message('note_off', channel=track_index, note=note_height_index, velocity=int(note_volume), time=int(round(ticks_per_bar / QUANTIZATION * note_lengths[note_height_index][track_index]))))
+                        note_lengths[note_height_index][track_index] = 0
                 for track_index, note_volume in enumerate(note_volumes):
-                    if not (note_height_index in playing_notes[track_index]):
-                        if (note_volume > 0 and (cell_index == 0 or bar[cell_index-1][note_height_index][track_index] == 0)): #if note start
-                            track.append(mido.Message('note_on', channel=track_index, note=note_height_index, velocity=int(note_volume), time=0))
-                            playing_notes[track_index].add(note_height_index)
+                    if (note_volume > 0 and (cell_index == 0 or bar[cell_index-1][note_height_index][track_index] == 0)): #if note start
+                        track.append(mido.Message('note_on', channel=track_index, note=note_height_index, velocity=int(note_volume), time=0))
     output.tracks.append(track)
     return output
 
