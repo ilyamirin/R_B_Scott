@@ -111,7 +111,7 @@ def piano_roll_3d_to_midi(song):
         for cell_index, cell in enumerate(bar):
             for note_height_index, note_volumes in enumerate(cell):
                 for track_index, note_volume in enumerate(note_volumes):
-                    if (note_volume == 0 and cell_index > 0 and bar[cell_index - 1][note_height_index][track_index] > 0):
+                    if ((note_volume == 0 or cell_index == QUANTIZATION - 1) and cell_index > 0 and bar[cell_index - 1][note_height_index][track_index] > 0):
                         microseconds_per_denominator = TEMPO * (4 / TIME_SIGNATURE[1])
                         microseconds_per_bar = microseconds_per_denominator * TIME_SIGNATURE[0]
                         seconds_per_bar = microseconds_per_bar / 1000000
