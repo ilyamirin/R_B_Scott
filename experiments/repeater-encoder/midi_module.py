@@ -98,14 +98,19 @@ def notes_to_3d_piano_rolls(songs):
 def piano_roll_3d_to_midi(song):
     output = mido.MidiFile()
     track = mido.MidiTrack()
+
+    for bar in song:
+        for cell in bar:
+            for note_volumes in cell:
+                print(note_volumes[0],end = ' ')
+            print("")
+
     for bar_index, bar in enumerate(song):
         note_lengths = [[0 for __ in range(len(bar[0][0]))] for _ in range(MIDI_NOTES_NUMBER)]
         playing_notes = [set() for __ in range(len(bar[0][0]))]
         for cell_index, cell in enumerate(bar):
             for note_height_index, note_volumes in enumerate(cell):
                 for track_index, note_volume in enumerate(note_volumes):
-                    if (note_volume > 0):
-                        note_lengths[note_height_index][track_index] += 1
                     if (note_volume == 0 and cell_index > 0 and bar[cell_index - 1][note_height_index][track_index] > 0):
                         microseconds_per_denominator = TEMPO * (4 / TIME_SIGNATURE[1])
                         microseconds_per_bar = microseconds_per_denominator * TIME_SIGNATURE[0]
@@ -113,7 +118,10 @@ def piano_roll_3d_to_midi(song):
                         ticks_per_bar = mido.second2tick(seconds_per_bar, output.ticks_per_beat, TEMPO)
                         track.append(mido.Message('note_off', channel=track_index, note=note_height_index, velocity=int(note_volume), time=int(round(ticks_per_bar / QUANTIZATION * note_lengths[note_height_index][track_index]))))
                         note_lengths[note_height_index][track_index] = 0
+            for note_height_index, note_volumes in enumerate(cell):
                 for track_index, note_volume in enumerate(note_volumes):
+                    if (note_volume > 0):
+                        note_lengths[note_height_index][track_index] += 1
                     if (note_volume > 0 and (cell_index == 0 or bar[cell_index-1][note_height_index][track_index] == 0)): #if note start
                         track.append(mido.Message('note_on', channel=track_index, note=note_height_index, velocity=int(note_volume), time=0))
     output.tracks.append(track)
