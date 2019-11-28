@@ -93,9 +93,33 @@ def notes_to_3d_piano_rolls(songs):
                 if (note['onset_time']['bar'] < SONG_LENGTH):
                     for i in range(round(QUANTIZATION / note['length'])):
                         result[song_idx][note['onset_time']['bar']][note['onset_time']['cell'] + i][note['note']][track_idx] = note['volume']
-    f = open("log_3d.txt", "w+")
     return result
 
+def piano_roll_3d_to_midi(song):
+    output = mido.MidiFile()
+    tracks = [mido.MidiTrack() for _ in range(len(song[0][0][0]))]
+    for bar_index, bar in enumerate(song):
+        note_lengths = [0 for _ in range(MIDI_NOTES_NUMBER)]
+        for cell_index, cell in enumerate(bar):
+            for note_height_index, note_volumes in enumerate(cell):
+                for track_index, note_volume in enumerate(note_volumes):
+                    if (note_volume > 0):
+                        note_lengths[note_height_index] += 1
+                    if (note_volume > 0 and (cell_index == 0 or bar[cell_index-1][note_height_index][track_index] == 0)): #if note start
+                        tracks[0].append(mido.Message('note_on', channel=track_index, note=note_height_index, velocity=int(note_volume), time=0))
+                    if (note_volume == 0 and cell_index > 0 and bar[cell_index-1][note_height_index][track_index] > 0):
+                        microseconds_per_denominator = TEMPO * (4 / TIME_SIGNATURE[1])  
+                        microseconds_per_bar = microseconds_per_denominator * TIME_SIGNATURE[0]
+                        seconds_per_bar = microseconds_per_bar / 1000000
+                        ticks_per_bar = mido.second2tick(seconds_per_bar, output.ticks_per_beat, TEMPO)
+                        tracks[0].append(mido.Message('note_off', channel=track_index, note=note_height_index, velocity=int(note_volume), time= int(round(ticks_per_bar / QUANTIZATION * note_lengths[note_height_index])) ))
+                        note_lengths[note_height_index] = 0
+    for track in tracks:
+        output.tracks.append(track)
+    return output
 
-notes_to_3d_piano_rolls(read_directories(["Music"]))
+
+songs = notes_to_3d_piano_rolls(read_directories(["Music"]))
+mid = piano_roll_3d_to_midi(songs[0])
+mid.save('new_song.mid')
 # notes_to_3d_piano_rolls(read_midi_file('aerozepp.mid', log_to_file=True))
