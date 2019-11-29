@@ -58,8 +58,9 @@ def read_midi_file(filename, log_to_file = False):
                     'note': msg.note,
                     'volume': msg.velocity,
                     'onset_time': {
-                        'bar': math.floor(notes_start_times[programs[msg.channel]][msg.note] / seconds_per_bar),
-                        'cell': round((notes_start_times[programs[msg.channel]][msg.note] % seconds_per_bar) / (seconds_per_bar / QUANTIZATION))
+                        'bar': math.floor(round(notes_start_times[programs[msg.channel]][msg.note],3) / seconds_per_bar),
+                        #hotfix for float % and division errors
+                        'cell': round(round(round((int(round(notes_start_times[programs[msg.channel]][msg.note],3)*1000) % int(round(seconds_per_bar,3)*1000)), 3) / (seconds_per_bar / QUANTIZATION))/1000)
                     }
                 }
                 if (log_to_file):
@@ -85,7 +86,7 @@ def read_directories(dirs):
     return result
 
 def notes_to_3d_piano_rolls(songs):
-    SONG_LENGTH = 2 #song length in bars
+    SONG_LENGTH = 32 #song length in bars
     result = [[np.zeros(shape=(QUANTIZATION, MIDI_NOTES_NUMBER, len(songs[0]))) for _ in range(SONG_LENGTH)] for __ in range(len(songs))]
     for song_idx,song in enumerate(songs):
         for track_idx,track in enumerate(song):
