@@ -3,6 +3,8 @@ import utils
 import math
 import os
 import numpy as np
+from argparse import Namespace
+
 
 # define some midi constants
 MIDI_CHANNELS_NUMBER = 16
@@ -145,3 +147,7 @@ np.save('songs.npy', songs)
 # mid = piano_roll_3d_to_midi(songs[0])
 # mid.save('new_song.mid')
 # notes_to_3d_piano_rolls(read_midi_file('aerozepp.mid', log_to_file=True))
+
+midi_module = Namespace(
+    piano_roll_3d_to_midi = piano_roll_3d_to_midi,
+)

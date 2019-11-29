@@ -13,7 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 import os
-
+import midi_module
 
 # reparameterization trick
 # instead of sampling from Q(z|X), sample epsilon = N(0,I)
@@ -37,6 +37,10 @@ def sampling(args):
 
 dataset = np.load('songs.npy')
 
+#rewrite shapes
+shape1 = dataset.shape[2]
+shape2 = dataset.shape[3]
+shape3 = dataset.shape[4]
 dataset = dataset.reshape((dataset.shape[0] * dataset.shape[1], dataset.shape[2] * dataset.shape[3] * dataset.shape[4]))
 
 # MNIST dataset
@@ -105,3 +109,11 @@ vae.fit(x_train,
         batch_size=batch_size,
         validation_data=(x_test, None))
 vae.save_weights('vae_mlp_mnist.h5')
+
+z_sample = np.array([[0, 0]])
+x_decoded = decoder.predict(z_sample)
+x_decoded = (x_decoded * 128).astype('int')
+x_decoded = [x_decoded.reshape(shape1, shape2, shape3)]
+mid = midi_module.piano_roll_3d_to_midi(x_decoded)
+mid.save('new_song.mid')
+print(x_decoded)
