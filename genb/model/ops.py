@@ -1,1 +1,8 @@
 import tensorflow as tf
+SONGS = 2
+LENGTH_IN_BARS = 5
+QUANTIZATION = 32
+NOTES = 128
+TRACKS = 16
+MIN_VOLUME = 0
+MAX_VOLUME = 255

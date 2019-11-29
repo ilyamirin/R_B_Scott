@@ -4,6 +4,7 @@ from pathlib import Path
 from model.genb import GenbModel
 import model.logger
 import numpy as np
+from model.ops import *
 
 # Error without this line.
 # TODO: check if everything workng witout
@@ -11,7 +12,7 @@ physical_devices = tf.config.experimental.list_physical_devices('GPU')
 tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 DATASET_DIR = Path('./dataset/')
-CHECKPOINT_PERIOD = 1
+CHECKPOINT_PERIOD = 100
 CHECKPOINT_DIR = Path('./checkpoints')
 CHECKPOINT_FILENAME = "cp-{epoch:04d}.hdf5"
 BATCH_SIZE = 1
@@ -35,19 +36,12 @@ def main():
     model.logger.configure_logger()
     # dataset structure [song][length_in_bars][quantization=32][note][track] = volume
     np.random.seed(100)
-    SONGS = 2
-    LENGTH_IN_BARS = 5
-    QUANTIZATION = 32
-    NOTES = 128
-    TRACKS = 16
-    MIN_VOLUME = 0
-    MAX_VOLUME = 255
     dataset = np.random.randint(MIN_VOLUME, MAX_VOLUME + 1, (SONGS, LENGTH_IN_BARS, QUANTIZATION, NOTES, TRACKS))
     dataset = dataset.astype(float) / MAX_VOLUME
+    dataset = dataset.reshape((SONGS * LENGTH_IN_BARS, 1, QUANTIZATION * NOTES * TRACKS))
 
-
-    # genb = GenbModel(SAMPLE_SIZE)
-    # genb.train(dataset, CHECKPOINT_DIR + CHECKPOINT_FILENAME, CHECKPOINT_PERIOD)
+    genb = GenbModel()
+    genb.train(dataset, BATCH_SIZE, CHECKPOINT_DIR/CHECKPOINT_FILENAME, CHECKPOINT_PERIOD)
 
     print('end')
 
