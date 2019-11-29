@@ -2,7 +2,7 @@ import tensorflow as tf
 
 
 class NBatchLogger(tf.keras.callbacks.Callback):
-    def __init__(self, display=100):
+    def __init__(self, display=1):
         self.seen = 0
         self.display = display
 
