@@ -12,13 +12,12 @@ class GenbModel(tf.keras.Sequential):
         """
 
         super(GenbModel, self).__init__()
+        mn = QUANTIZATION * NOTES * TRACKS
 
         layers = [
-            keras.layers.LSTM(QUANTIZATION, input_shape=(1, QUANTIZATION * NOTES * TRACKS), return_sequences=True, dropout=.3),
-            keras.layers.LSTM(QUANTIZATION // 4, return_sequences=True, dropout=.3),
-            keras.layers.LSTM(QUANTIZATION // 8, return_sequences=True, dropout=.3),
-            keras.layers.LSTM(QUANTIZATION // 4, return_sequences=True, dropout=.3),
-            keras.layers.LSTM(QUANTIZATION // 2, return_sequences=False, dropout=.3),
+            keras.layers.LSTM(100, input_shape=(1, QUANTIZATION * NOTES * TRACKS), return_sequences=True, dropout=.3),
+            keras.layers.LSTM(10, return_sequences=True, dropout=.3),
+            keras.layers.LSTM(100, return_sequences=False, dropout=.3),
             keras.layers.Dense(QUANTIZATION * NOTES * TRACKS),
 
         ]
