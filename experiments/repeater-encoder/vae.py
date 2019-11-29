@@ -40,12 +40,9 @@ dataset = np.load('songs.npy')
 dataset = dataset.reshape((dataset.shape[0] * dataset.shape[1], dataset.shape[2] * dataset.shape[3] * dataset.shape[4]))
 
 # MNIST dataset
-x_test, y_test = np.array_split(dataset, 2)
+x_train, x_test = np.array_split(dataset, 2)
 
-image_size = x_train.shape[1]
-original_dim = image_size * image_size
-x_train = np.reshape(x_train, [-1, original_dim])
-x_test = np.reshape(x_test, [-1, original_dim])
+original_dim = x_train.shape[1]
 x_train = x_train.astype('float32') / 128
 x_test = x_test.astype('float32') / 128
 
@@ -87,7 +84,6 @@ outputs = decoder(encoder(inputs)[2])
 vae = Model(inputs, outputs, name='vae_mlp')
 
 models = (encoder, decoder)
-data = (x_test, y_test)
 
 # VAE loss = mse_loss or xent_loss + kl_loss
 reconstruction_loss = mse(inputs, outputs)
