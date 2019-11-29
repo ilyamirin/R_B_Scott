@@ -97,7 +97,7 @@ def read_directories(dirs):
 
 def notes_to_3d_piano_rolls(songs):
     SONG_LENGTH = 32 #song length in bars
-    result = [[np.zeros(shape=(QUANTIZATION, MIDI_NOTES_NUMBER, len(songs[0]))) for _ in range(SONG_LENGTH)] for __ in range(len(songs))]
+    result = np.zeros(shape=(len(songs), SONG_LENGTH, QUANTIZATION, MIDI_NOTES_NUMBER, len(songs[0])))
     for song_idx,song in enumerate(songs):
         for track_idx,track in enumerate(song):
             for note_idx,note in enumerate(track):
@@ -140,6 +140,8 @@ def piano_roll_3d_to_midi(song):
 
 
 songs = notes_to_3d_piano_rolls(read_directories(["Music"]))
-mid = piano_roll_3d_to_midi(songs[0])
-mid.save('new_song.mid')
+from tempfile import TemporaryFile
+np.save('songs.npy', songs)
+# mid = piano_roll_3d_to_midi(songs[0])
+# mid.save('new_song.mid')
 # notes_to_3d_piano_rolls(read_midi_file('aerozepp.mid', log_to_file=True))
