@@ -37,9 +37,10 @@ def sampling(args):
 
 dataset = np.load('songs.npy')
 
+dataset = dataset.reshape((dataset.shape[0] * dataset.shape[1], dataset.shape[2] * dataset.shape[3] * dataset.shape[4]))
 
 # MNIST dataset
-(x_train, y_train), (x_test, y_test) = mnist.load_data()
+x_test, y_test = np.array_split(dataset, 2)
 
 image_size = x_train.shape[1]
 original_dim = image_size * image_size
