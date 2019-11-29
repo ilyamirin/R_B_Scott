@@ -1,20 +1,18 @@
 import math
-
 import tensorflow as tf
 from tensorflow import keras
-
 from .batch_logger import NBatchLogger
 from .logger import logger
 
 
-class GenaModel(tf.keras.Sequential):
+class GenbModel(tf.keras.Sequential):
     def __init__(self, sample_size):
         """Initializes the BDB Genb model.
 
         :param int sample_size:how many data points to take for the input
         """
 
-        super(GenaModel, self).__init__()
+        super(GenbModel, self).__init__()
         self.sample_size = sample_size
 
         layers = [
