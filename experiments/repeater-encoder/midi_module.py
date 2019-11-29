@@ -48,21 +48,29 @@ def read_midi_file(filename, log_to_file = False):
             if (msg.type == 'note_on' and msg.velocity != 0):
                 notes_start_times[programs[msg.channel]][msg.note] = current_time
             if (msg.type == 'note_off') or (msg.type == 'note_on' and msg.velocity == 0):
+                EPS = 0.01
                 note_time = current_time - notes_start_times[programs[msg.channel]][msg.note]
                 microseconds_per_denominator = TEMPO * (4 / TIME_SIGNATURE[1])
                 microseconds_per_bar = microseconds_per_denominator * TIME_SIGNATURE[0]
                 seconds_per_bar = microseconds_per_bar / 1000000
                 note_length = utils.find_nearest(NOTE_LENGTHS, seconds_per_bar / note_time)
+                bar =  notes_start_times[programs[msg.channel]][msg.note] / seconds_per_bar
+                if abs(bar - math.ceil(bar)) < EPS:
+                    bar = math.ceil(bar)
+                else:
+                    bar = math.floor(bar)
                 note = {
                     'length': note_length,
                     'note': msg.note,
                     'volume': msg.velocity,
                     'onset_time': {
-                        'bar': math.floor(round(notes_start_times[programs[msg.channel]][msg.note],3) / seconds_per_bar),
+                        'bar': bar,
                         #hotfix for float % and division errors
                         'cell': round(round(round((int(round(notes_start_times[programs[msg.channel]][msg.note],3)*1000) % int(round(seconds_per_bar,3)*1000)), 3) / (seconds_per_bar / QUANTIZATION))/1000)
                     }
                 }
+                if (note['onset_time']['cell'] == QUANTIZATION):
+                    note['onset_time']['cell'] = 0
                 if (log_to_file):
                     print(note, file=f)
                 notes[programs[msg.channel]].append(note.copy())
