@@ -53,6 +53,8 @@ def read_midi_file(filename, log_to_file = False):
                 microseconds_per_denominator = TEMPO * (4 / TIME_SIGNATURE[1])
                 microseconds_per_bar = microseconds_per_denominator * TIME_SIGNATURE[0]
                 seconds_per_bar = microseconds_per_bar / 1000000
+                if (note_time == 0):
+                    continue
                 note_length = utils.find_nearest(NOTE_LENGTHS, seconds_per_bar / note_time)
                 bar =  notes_start_times[programs[msg.channel]][msg.note] / seconds_per_bar
                 if abs(bar - math.ceil(bar)) < EPS:
