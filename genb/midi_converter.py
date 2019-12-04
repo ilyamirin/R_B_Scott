@@ -1,6 +1,12 @@
+import math
+from typing import List
+
 import mido
 from pathlib import Path
 import logging
+
+from mido.midifiles.midifiles import DEFAULT_TICKS_PER_BEAT, DEFAULT_TEMPO
+
 from note import Note
 from constants import *
 from logger import Logger
@@ -9,14 +15,14 @@ FILE_PATH = Path('song.mid')
 log = Logger("midi_converter", logging.DEBUG)
 
 
-def midi_to_notes(file_path: Path) -> [Note]:
+def midi_to_notes(midi: mido.MidiFile) -> List[Note]:
     """Convert midi to array of notes"""
-    notes = []
+    notes: List[Note] = []
     active_notes = [[None for _ in range(MIDI_NOTES_NUMBER)] for _ in range(MIDI_INSTRUMENTS_NUMBER)]
     programs = [0 for _ in range(MIDI_CHANNELS_NUMBER)]
     current_time: float = 0
 
-    for msg in mido.MidiFile(file_path):
+    for msg in midi:
         log.debug(msg)
         current_time += msg.time
 
@@ -28,7 +34,9 @@ def midi_to_notes(file_path: Path) -> [Note]:
 
         if msg.type == 'note_on' and msg.velocity != 0:
             instrument = programs[msg.channel]
-            active_notes[instrument][msg.note] = Note(instrument, current_time)
+            active_notes[instrument][msg.note] = Note(msg.note, instrument, msg.velocity, current_time)
+
+        # todo: check note change velocity
 
         if msg.type == 'note_off' or (msg.type == 'note_on' and msg.velocity == 0):
             instrument = programs[msg.channel]
@@ -38,23 +46,56 @@ def midi_to_notes(file_path: Path) -> [Note]:
             notes.append(note)
             active_notes[instrument][msg.note] = None
 
+    return notes
 
-def midi_to_song(file_path: Path):
-    notes = midi_to_notes(file_path)
-    # notes[0].
-    # # result array
-    # # TODO: document structure
-    # song = []
-    # # time passed from last note_on/note_off event
-    # current_time = 0
-    #
-    # for msg in mido.MidiFile(file_path):
-    #     log.debug(msg)
-    #     current_time += msg.time
+
+def midi_to_song(file_path: Path) -> []:
+    midi = mido.MidiFile(file_path)
+    notes = midi_to_notes(midi)
+    total_quants = math.ceil(midi.length * QUANTIZATION)
+    roll = [[[0 for _ in range(MIDI_NOTES_NUMBER)] for _ in range(MIDI_INSTRUMENTS_NUMBER)] for _ in range(total_quants)]
+
+    for note in notes:
+        start_quant = math.ceil(note.start_time * QUANTIZATION)
+        end_quant = math.floor(note.end_time * QUANTIZATION)
+        for i in range(start_quant, end_quant + 1):
+            roll[i][note.instrument][note.note] = note.velocity
+
+    return roll
+
+
+def song_to_midi(song: []):
+    output = mido.MidiFile()
+    track = mido.MidiTrack()
+
+    # todo parse correct instruments
+    prev_state = [[0 for _ in range(MIDI_NOTES_NUMBER)] for _ in range(MIDI_INSTRUMENTS_NUMBER)]
+    time = 0
+    for quant, instruments in enumerate(song):
+        for instrument, notes in enumerate(instruments):
+            for note, velocity in enumerate(notes):
+                if (quant == 32 and instrument == 29 and note == 59):
+                    print('got')
+                if prev_state[instrument][note] == 0 and velocity != 0:
+                    track.append(mido.Message('note_on', channel=2, note=note, velocity=velocity, time=math.ceil(mido.second2tick(time, DEFAULT_TICKS_PER_BEAT, DEFAULT_TEMPO))))
+                    time = 0
+                if prev_state[instrument][note] != 0 and (velocity == 0 or quant == len(song)-1):
+                    track.append(mido.Message('note_off', channel=2, note=note, velocity=0, time=math.ceil(mido.second2tick(time, DEFAULT_TICKS_PER_BEAT, DEFAULT_TEMPO))))
+                    time = 0
+
+        prev_state = instruments
+        time += 1/QUANTIZATION
+
+    output.tracks.append(track)
+    output.save('1.mid')
+
 
 
 def main():
     song = midi_to_song(FILE_PATH)
+    song_to_midi(song)
+    # f = open("log.txt", "w+")
+    # f.write(str(song))
     print('end')
 
 

@@ -8,5 +8,5 @@ class Logger(logging.Logger):
         handler = logging.StreamHandler(sys.stdout)
         self.addHandler(handler)
 
-    def line_separator(self, level):
-        self.log(level, "========")
+    def line_separator(self,):
+        self.debug("========")
