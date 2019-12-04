@@ -2,9 +2,9 @@ import tensorflow as tf
 import argparse
 from pathlib import Path
 from model.genb import GenbModel
-import model.logger
+import logger
 import numpy as np
-from model.ops import *
+from constants import *
 
 # Error without this line.
 # TODO: check if everything workng witout
@@ -33,7 +33,7 @@ def parse_arguments():
 def main():
     known_args, unknown_args = parse_arguments()
     create_checkpoint_dir(CHECKPOINT_DIR)
-    model.logger.configure_logger()
+    logger.configure_logger()
     # dataset structure [song][length_in_bars][quantization=32][note][track] = volume
     np.random.seed(100)
     dataset = np.random.randint(MIN_VOLUME, MAX_VOLUME + 1, (SONGS, LENGTH_IN_BARS, QUANTIZATION, NOTES, TRACKS))

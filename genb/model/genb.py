@@ -3,8 +3,9 @@ from pathlib import Path
 import tensorflow as tf
 from tensorflow import keras
 from .batch_logger import NBatchLogger
-from .logger import logger
-from .ops import *
+from logger import logger
+from constants import *
+
 
 class GenbModel(tf.keras.Sequential):
     def __init__(self):
