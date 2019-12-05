@@ -11,7 +11,10 @@ TIME_SIGNATURE = (4, 4)
 def read_midi_file(filename):
     #now can parse only midi type 0 files with constant tempo and (4,4) time signature
     # TODO: evaluate beat resolution based on time signature
-    return pypianoroll.parse(filename, beat_resolution=round(QUANTIZATION/4))
+    multitrack = pypianoroll.parse(filename, beat_resolution=round(QUANTIZATION/4))
+    multitrack.pad_to_multiple(QUANTIZATION)
+    multitrack.pad_to_same()
+    return multitrack
 
 def read_directory(dir):
     #read firectory
