@@ -42,9 +42,24 @@ def read_directory(dir):
                 result[song_index][bar_index][track_index] = bar
     return result
 
+def write_song_to_midi(song, filename):
+    #gets a 4-d array with shape (song length in bars, song tracks, grid size, midi notes number)
+    tracks = [np.array([]) for _ in range(song.shape[1])]
+    for bar_index, bar in enumerate(song):
+        for track_index, track in enumerate(bar):
+            if (tracks[track_index].size == 0):
+                tracks[track_index] = track
+            else:
+                tracks[track_index] = np.concatenate((tracks[track_index], track))
+    for track_index, track in enumerate(tracks):
+        tracks[track_index] = pypianoroll.Track(track)
+    multitrack = pypianoroll.Multitrack(tracks=tracks, beat_resolution=round(QUANTIZATION/4))
+    multitrack.write(filename)
+
 pypianoroll_midi = Namespace(
     read_directory = read_directory,
     read_midi_file = read_midi_file,
 )
 
-read_directory("Music")
+songs = read_directory("Music")
+write_song_to_midi(songs[0], 'pyp.mid')
