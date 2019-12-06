@@ -4,16 +4,13 @@ from __future__ import print_function
 
 from keras.layers import Lambda, Input, Dense
 from keras.models import Model
-from keras.datasets import mnist
 from keras.losses import mse
 from keras.utils import plot_model
 from keras import backend as K
 
 import numpy as np
 import matplotlib.pyplot as plt
-import argparse
-import os
-import midi_module
+import pypianoroll_midi
 
 # reparameterization trick
 # instead of sampling from Q(z|X), sample epsilon = N(0,I)
@@ -35,7 +32,7 @@ def sampling(args):
     epsilon = K.random_normal(shape=(batch, dim))
     return z_mean + K.exp(0.5 * z_log_var) * epsilon
 
-dataset = np.load('songs.npy')
+dataset = pypianoroll_midi.load_dataset()
 
 #rewrite shapes
 shape1 = dataset.shape[2]
@@ -55,7 +52,7 @@ input_shape = (original_dim, )
 intermediate_dim = 512
 batch_size = 128
 latent_dim = 2
-epochs = 50
+epochs = 2000
 
 # VAE model = encoder + decoder
 # build encoder model
@@ -113,7 +110,7 @@ vae.save_weights('vae_mlp_mnist.h5')
 z_sample = np.array([[0, 0]])
 x_decoded = decoder.predict(z_sample)
 x_decoded = (x_decoded * 128).astype('int')
-x_decoded = [x_decoded.reshape(shape1, shape2, shape3)]
-mid = midi_module.piano_roll_3d_to_midi(x_decoded)
-mid.save('new_song.mid')
+x_decoded = x_decoded.reshape(shape1, shape2, shape3)
+x_decoded = np.expand_dims(x_decoded, axis=0)
+pypianoroll_midi.write_song_to_midi(x_decoded, "output.midi")
 print(x_decoded)

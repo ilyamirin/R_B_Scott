@@ -79,7 +79,9 @@ def create_dataset():
 
 def load_dataset():
     #returns existing dataset that has been written by create_dataset function
-    return np.load(os.path.join(DATASET_DIR, "songs"))
+    file =  np.load(os.path.join(DATASET_DIR, "songs.npz"))
+    dataset = file.f.arr_0
+    return dataset
 
 pypianoroll_midi = Namespace(
     read_directory = read_directory,
