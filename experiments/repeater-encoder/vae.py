@@ -135,7 +135,6 @@ def generate_sample():
     shapes_file = open(os.path.join(MODEL_DIR, "shapes.pkl"),"rb")
     shapes =  pickle.load(shapes_file)
     shapes_file.close()
-    z_sample = np.array([[0]*latent_dim])
     z_sample = np.zeros((1, latent_dim))
     x_decoded = decoder.predict(z_sample)
     x_decoded = (x_decoded * 128).astype('int')
