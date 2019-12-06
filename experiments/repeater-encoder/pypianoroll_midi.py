@@ -95,5 +95,3 @@ pypianoroll_midi = Namespace(
     create_dataset = create_dataset,
     load_dataset = load_dataset,
 )
-
-create_dataset()

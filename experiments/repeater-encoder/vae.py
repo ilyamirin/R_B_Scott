@@ -14,13 +14,15 @@ import matplotlib.pyplot as plt
 import pypianoroll_midi
 import os
 import pickle
+from argparse import Namespace
+
 
 MODEL_DIR = "model"
 
 intermediate_dim = 512
 batch_size = 128
-latent_dim = 8
-epochs = 500
+latent_dim = 2
+epochs = 1
 
 # reparameterization trick
 # instead of sampling from Q(z|X), sample epsilon = N(0,I)
@@ -58,10 +60,6 @@ def train():
     x_test = x_test.astype('float32') / midi_notes_number
 
     input_shape = (original_dim,)
-    intermediate_dim = 512
-    batch_size = 128
-    latent_dim = 2
-    epochs = 5000
 
     # VAE model = encoder + decoder
     # build encoder model
@@ -143,5 +141,7 @@ def generate_sample():
     pypianoroll_midi.write_song_to_midi(x_decoded, "output.midi")
     print(x_decoded)
 
-train()
-generate_sample()
+vae = Namespace(
+    train = train,
+    generate_sample = generate_sample,
+)
