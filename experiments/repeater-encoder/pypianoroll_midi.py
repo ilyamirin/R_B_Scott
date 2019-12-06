@@ -2,6 +2,7 @@ import pypianoroll
 import os
 import numpy as np
 from argparse import Namespace
+import pickle
 
 QUANTIZATION = 32
 MIDI_PROGRAMS_NUMBER = 128
@@ -63,8 +64,10 @@ def write_song_to_midi(song, filename):
                 tracks[track_index] = track
             else:
                 tracks[track_index] = np.concatenate((tracks[track_index], track))
+    song_tracks_to_programs_file = open(os.path.join(DATASET_DIR, "song_tracks_to_programs.pkl"),"rb")
+    song_tracks_to_programs =  pickle.load(song_tracks_to_programs_file)
     for track_index, track in enumerate(tracks):
-        tracks[track_index] = pypianoroll.Track(track)
+        tracks[track_index] = pypianoroll.Track(track, program=song_tracks_to_programs[track_index])
     multitrack = pypianoroll.Multitrack(tracks=tracks, beat_resolution=round(QUANTIZATION/4))
     multitrack.write(filename)
 
@@ -75,7 +78,9 @@ def create_dataset():
     if not os.path.exists(DATASET_DIR):
         os.mkdir(DATASET_DIR)
     np.savez_compressed(os.path.join(DATASET_DIR, "songs"), songs)
-    np.savez_compressed(os.path.join(DATASET_DIR, "song_tracks_to_programs"), song_tracks_to_programs)
+    song_tracks_to_programs_file = open(os.path.join(DATASET_DIR, "song_tracks_to_programs.pkl"), "wb")
+    pickle.dump(song_tracks_to_programs, song_tracks_to_programs_file)
+    song_tracks_to_programs_file.close()
 
 def load_dataset():
     #returns existing dataset that has been written by create_dataset function
