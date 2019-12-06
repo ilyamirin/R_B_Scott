@@ -7,6 +7,8 @@ QUANTIZATION = 32
 MIDI_PROGRAMS_NUMBER = 128
 MIDI_NOTES_NUMBER = 128
 TIME_SIGNATURE = (4, 4)
+MUSIC_DIR = "music"
+DATASET_DIR = "dataset"
 
 def read_midi_file(filename):
     #now can parse only midi type 0 files with constant tempo and (4,4) time signature
@@ -18,6 +20,9 @@ def read_midi_file(filename):
 
 def read_directory(dir):
     #read firectory
+    #returns a dict with keys:
+    #- songs: numpy array with shape (number of songs, song length in bars, song tracks, grid size, midi notes number)
+    #- song_tracks_to_programs: maps dataset tracks to MIDI programs
     songs = []
     for root, subdirs, files in os.walk(dir):
         for file in files:
@@ -43,7 +48,11 @@ def read_directory(dir):
         for track_index, track in enumerate(song.tracks):
             for bar_index, bar in enumerate(np.split(track.pianoroll, indices_or_sections=round(track.pianoroll.shape[0] / QUANTIZATION))):
                 result[song_index][bar_index][track_index] = bar
-    return result
+    #invert non_empty_programs so it maps midi channels into programs
+    song_tracks_to_programs = {v: k for k, v in non_empty_programs.items()}
+    return ({'songs': result,
+             'song_tracks_to_programs': song_tracks_to_programs
+             })
 
 def write_song_to_midi(song, filename):
     #gets a 4-d array with shape (song length in bars, song tracks, grid size, midi notes number)
@@ -59,10 +68,19 @@ def write_song_to_midi(song, filename):
     multitrack = pypianoroll.Multitrack(tracks=tracks, beat_resolution=round(QUANTIZATION/4))
     multitrack.write(filename)
 
+def load_dataset(music_dir=MUSIC_DIR, dataset_dir=DATASET_DIR):
+    dataset = read_directory(music_dir)
+    songs = dataset['songs']
+    song_tracks_to_programs = dataset['song_tracks_to_programs']
+    if not os.path.exists(dataset_dir):
+        os.mkdir(dataset_dir)
+    np.savez_compressed(os.path.join(dataset_dir, "songs"), songs)
+    np.savez_compressed(os.path.join(dataset_dir, "song_tracks_to_programs"), song_tracks_to_programs)
+
 pypianoroll_midi = Namespace(
     read_directory = read_directory,
     read_midi_file = read_midi_file,
+    load_dataset = load_dataset
 )
 
-songs = read_directory("Music")
-write_song_to_midi(songs[0], 'pyp.mid')
+load_dataset()
