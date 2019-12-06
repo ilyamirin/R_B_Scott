@@ -68,19 +68,24 @@ def write_song_to_midi(song, filename):
     multitrack = pypianoroll.Multitrack(tracks=tracks, beat_resolution=round(QUANTIZATION/4))
     multitrack.write(filename)
 
-def load_dataset(music_dir=MUSIC_DIR, dataset_dir=DATASET_DIR):
-    dataset = read_directory(music_dir)
+def create_dataset():
+    dataset = read_directory(MUSIC_DIR)
     songs = dataset['songs']
     song_tracks_to_programs = dataset['song_tracks_to_programs']
-    if not os.path.exists(dataset_dir):
-        os.mkdir(dataset_dir)
-    np.savez_compressed(os.path.join(dataset_dir, "songs"), songs)
-    np.savez_compressed(os.path.join(dataset_dir, "song_tracks_to_programs"), song_tracks_to_programs)
+    if not os.path.exists(DATASET_DIR):
+        os.mkdir(DATASET_DIR)
+    np.savez_compressed(os.path.join(DATASET_DIR, "songs"), songs)
+    np.savez_compressed(os.path.join(DATASET_DIR, "song_tracks_to_programs"), song_tracks_to_programs)
+
+def load_dataset():
+    #returns existing dataset that has been written by create_dataset function
+    return np.load(os.path.join(DATASET_DIR, "songs"))
 
 pypianoroll_midi = Namespace(
     read_directory = read_directory,
     read_midi_file = read_midi_file,
-    load_dataset = load_dataset
+    create_dataset = create_dataset,
+    load_dataset = load_dataset,
 )
 
-load_dataset()
+create_dataset()
