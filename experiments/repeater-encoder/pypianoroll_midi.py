@@ -66,6 +66,7 @@ def write_song_to_midi(song, filename):
                 tracks[track_index] = np.concatenate((tracks[track_index], track))
     song_tracks_to_programs_file = open(os.path.join(DATASET_DIR, "song_tracks_to_programs.pkl"),"rb")
     song_tracks_to_programs =  pickle.load(song_tracks_to_programs_file)
+    song_tracks_to_programs_file.close()
     for track_index, track in enumerate(tracks):
         tracks[track_index] = pypianoroll.Track(track, program=song_tracks_to_programs[track_index])
     multitrack = pypianoroll.Multitrack(tracks=tracks, beat_resolution=round(QUANTIZATION/4))

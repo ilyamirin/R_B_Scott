@@ -7,13 +7,20 @@ from keras.models import Model
 from keras.losses import mse
 from keras.utils import plot_model
 from keras import backend as K
+from keras.models import load_model
 
 import numpy as np
 import matplotlib.pyplot as plt
 import pypianoroll_midi
 import os
+import pickle
 
 MODEL_DIR = "model"
+
+intermediate_dim = 512
+batch_size = 128
+latent_dim = 8
+epochs = 500
 
 # reparameterization trick
 # instead of sampling from Q(z|X), sample epsilon = N(0,I)
@@ -51,10 +58,6 @@ def train():
     x_test = x_test.astype('float32') / midi_notes_number
 
     input_shape = (original_dim,)
-    intermediate_dim = 512
-    batch_size = 128
-    latent_dim = 2
-    epochs = 1
 
     # VAE model = encoder + decoder
     # build encoder model
@@ -109,13 +112,32 @@ def train():
             validation_data=(x_test, None))
     if not os.path.exists(MODEL_DIR):
         os.mkdir(MODEL_DIR)
-    vae.save_weights(os.path.join(MODEL_DIR, 'model.h5'))
-    z_sample = np.array([[0, 0]])
+    vae.save(os.path.join(MODEL_DIR, 'vae.h5'))
+    encoder.save(os.path.join(MODEL_DIR, 'encoder.h5'))
+    decoder.save(os.path.join(MODEL_DIR, 'decoder.h5'))
+    shapes = {
+        'songs_number': songs_number,
+        'song_length_in_bars': song_length_in_bars,
+        'song_tracks': song_tracks,
+        'grid_size': grid_size,
+        'midi_notes_number': midi_notes_number,
+    }
+    shapes_file = open(os.path.join(MODEL_DIR, "shapes.pkl"), "wb")
+    pickle.dump(shapes, shapes_file)
+    shapes_file.close()
+
+def generate_sample():
+    decoder = load_model(os.path.join(MODEL_DIR, 'decoder.h5'))
+    shapes_file = open(os.path.join(MODEL_DIR, "shapes.pkl"),"rb")
+    shapes =  pickle.load(shapes_file)
+    shapes_file.close()
+    z_sample = np.array([[0]*latent_dim])
     x_decoded = decoder.predict(z_sample)
     x_decoded = (x_decoded * 128).astype('int')
-    x_decoded = x_decoded.reshape(song_tracks, grid_size, midi_notes_number)
+    x_decoded = x_decoded.reshape(shapes['song_tracks'], shapes['grid_size'], shapes['midi_notes_number'])
     x_decoded = np.expand_dims(x_decoded, axis=0)
     pypianoroll_midi.write_song_to_midi(x_decoded, "output.midi")
     print(x_decoded)
 
 train()
+generate_sample()
