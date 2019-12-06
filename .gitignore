@@ -10,3 +10,7 @@ Music
 *.mid
 *.midi
 *.npz
+*.dsc
+*.npy
+*.png
+*.h5
