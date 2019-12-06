@@ -21,8 +21,8 @@ MODEL_DIR = "model"
 
 intermediate_dim = 512
 batch_size = 128
-latent_dim = 2
-epochs = 1
+latent_dim = 3
+epochs = 150
 
 # reparameterization trick
 # instead of sampling from Q(z|X), sample epsilon = N(0,I)
@@ -56,8 +56,8 @@ def train():
     original_dim = x_train.shape[1]
 
     #normalize
-    x_train = x_train.astype('float32') / midi_notes_number
-    x_test = x_test.astype('float32') / midi_notes_number
+    # x_train = x_train.astype('float32') / midi_notes_number
+    # x_test = x_test.astype('float32') / midi_notes_number
 
     input_shape = (original_dim,)
 
@@ -135,10 +135,11 @@ def generate_sample():
     shapes_file.close()
     z_sample = np.zeros((1, latent_dim))
     x_decoded = decoder.predict(z_sample)
-    x_decoded = (x_decoded * 128).astype('int')
+    x_decoded = np.around(x_decoded)
+    x_decoded = (x_decoded * 64)
     x_decoded = x_decoded.reshape(shapes['song_tracks'], shapes['grid_size'], shapes['midi_notes_number'])
     x_decoded = np.expand_dims(x_decoded, axis=0)
-    pypianoroll_midi.write_song_to_midi(x_decoded, "output.midi")
+    pypianoroll_midi.write_song_to_midi(x_decoded, "output.mid")
     print(x_decoded)
 
 vae = Namespace(

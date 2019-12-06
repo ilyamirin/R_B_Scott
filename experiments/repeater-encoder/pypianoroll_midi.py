@@ -10,6 +10,7 @@ MIDI_NOTES_NUMBER = 128
 TIME_SIGNATURE = (4, 4)
 MUSIC_DIR = "music"
 DATASET_DIR = "dataset"
+MIDI_DRUM_PROGRAM = -1
 
 def read_midi_file(filename):
     #now can parse only midi type 0 files with constant tempo and (4,4) time signature
@@ -17,6 +18,7 @@ def read_midi_file(filename):
     multitrack = pypianoroll.parse(filename, beat_resolution=round(QUANTIZATION/4))
     multitrack.pad_to_multiple(QUANTIZATION)
     multitrack.pad_to_same()
+    multitrack.binarize(threshold=10) #cut off too calm notes
     return multitrack
 
 def read_directory(dir):
@@ -37,9 +39,12 @@ def read_directory(dir):
     max_song_length = 0
     for song in songs:
         for track in song.tracks:
-            if not (track.program in non_empty_programs):
+            if not (track.program in non_empty_programs or track.is_drum and MIDI_DRUM_PROGRAM in non_empty_programs):
                 # map existing programs into (0..num_existing_programs)
-                non_empty_programs[track.program] = non_empty_programs_count
+                if track.is_drum:
+                    non_empty_programs[MIDI_DRUM_PROGRAM] = non_empty_programs_count
+                else:
+                    non_empty_programs[track.program] = non_empty_programs_count
                 non_empty_programs_count += 1
             max_song_length = max(max_song_length, round(track.pianoroll.shape[0] / QUANTIZATION))
 
@@ -48,7 +53,10 @@ def read_directory(dir):
     for song_index, song in enumerate(songs):
         for track_index, track in enumerate(song.tracks):
             for bar_index, bar in enumerate(np.split(track.pianoroll, indices_or_sections=round(track.pianoroll.shape[0] / QUANTIZATION))):
-                result[song_index][bar_index][track_index] = bar
+                track_program = (track.program, MIDI_DRUM_PROGRAM)[track.is_drum]
+                result[song_index][bar_index][non_empty_programs[track_program]] = np.maximum(
+                    result[song_index][bar_index][non_empty_programs[track_program]],
+                    bar)
     #invert non_empty_programs so it maps midi channels into programs
     song_tracks_to_programs = {v: k for k, v in non_empty_programs.items()}
     return ({'songs': result,
@@ -68,7 +76,10 @@ def write_song_to_midi(song, filename):
     song_tracks_to_programs =  pickle.load(song_tracks_to_programs_file)
     song_tracks_to_programs_file.close()
     for track_index, track in enumerate(tracks):
-        tracks[track_index] = pypianoroll.Track(track, program=song_tracks_to_programs[track_index])
+        tracks[track_index] = pypianoroll.Track(track,
+                                                program=(song_tracks_to_programs[track_index], 0)
+                                                        [song_tracks_to_programs[track_index] == MIDI_DRUM_PROGRAM],
+                                                is_drum=(song_tracks_to_programs[track_index] == MIDI_DRUM_PROGRAM))
     multitrack = pypianoroll.Multitrack(tracks=tracks, beat_resolution=round(QUANTIZATION/4))
     multitrack.write(filename)
 
