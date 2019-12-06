@@ -21,7 +21,7 @@ def read_midi_file(filename, log_to_file = False):
     # This function can only read files with constant tempo and time signature
 
     mid = mido.MidiFile(filename)
-    notes = [[] for _ in range( MIDI_INSTRUMENTS_NUMBER)]
+    notes = [[] for _ in range(MIDI_INSTRUMENTS_NUMBER)]
     current_time = 0
     notes_start_times = [[None for _ in range(MIDI_NOTES_NUMBER)] for _ in range(MIDI_INSTRUMENTS_NUMBER)]
     programs = [0 for _ in range( MIDI_CHANNELS_NUMBER)]

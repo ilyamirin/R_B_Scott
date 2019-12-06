@@ -27,7 +27,7 @@ def read_directory(dir):
     songs = []
     for root, subdirs, files in os.walk(dir):
         for file in files:
-            path = root + "\\" + file
+            path = os.path.join(root, file)
             if (path.endswith('.mid') or path.endswith('.midi')):
                 songs.append(read_midi_file(path))
 

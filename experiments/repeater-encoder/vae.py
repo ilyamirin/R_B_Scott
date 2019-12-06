@@ -58,6 +58,10 @@ def train():
     x_test = x_test.astype('float32') / midi_notes_number
 
     input_shape = (original_dim,)
+    intermediate_dim = 512
+    batch_size = 128
+    latent_dim = 2
+    epochs = 5000
 
     # VAE model = encoder + decoder
     # build encoder model
@@ -132,6 +136,7 @@ def generate_sample():
     shapes =  pickle.load(shapes_file)
     shapes_file.close()
     z_sample = np.array([[0]*latent_dim])
+    z_sample = np.zeros((1, latent_dim))
     x_decoded = decoder.predict(z_sample)
     x_decoded = (x_decoded * 128).astype('int')
     x_decoded = x_decoded.reshape(shapes['song_tracks'], shapes['grid_size'], shapes['midi_notes_number'])
