@@ -19,12 +19,12 @@ from argparse import Namespace
 
 MODEL_DIR = "model"
 
-individual_enc_1_dim = 1024
-individual_enc_2_dim = 64
-global_enc_1_dim = 512
+individual_enc_1_dim = 1600
+individual_enc_2_dim = 768
+global_enc_1_dim = 394
 batch_size = 1
-latent_dim = 64
-epochs = 1
+latent_dim = 32
+epochs = 3000
 
 # reparameterization trick
 # instead of sampling from Q(z|X), sample epsilon = N(0,I)
