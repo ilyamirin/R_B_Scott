@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from keras.layers import Lambda, Input, Dense, TimeDistributed, Flatten, Reshape
+from keras.layers import Lambda, Input, Dense, TimeDistributed, Flatten, Reshape, BatchNormalization, Dropout
 from keras.models import Model
 from keras.losses import mse
 from keras.utils import plot_model
@@ -86,7 +86,9 @@ def train():
 
     # build decoder model
     latent_inputs = Input(shape=(latent_dim,), name='z_sampling')
-    x = Dense(global_enc_1_dim, activation='relu')(latent_inputs)
+    x = BatchNormalization(momentum=0.9)(latent_inputs) #TODO: fix hardcoded momentum
+    x = Dense(global_enc_1_dim, activation='relu')(x)
+    x = Dropout(0.1)(x)
     x = Dense((input_shape[0]*individual_enc_2_dim), activation='relu')(x)
     x = Reshape((input_shape[0], individual_enc_2_dim))(x)
     x = TimeDistributed(Dense(individual_enc_1_dim, activation='relu'))(x)
