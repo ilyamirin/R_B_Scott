@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from keras.layers import Lambda, Input, Dense
+from keras.layers import Lambda, Input, Dense, TimeDistributed, Flatten, Reshape
 from keras.models import Model
 from keras.losses import mse
 from keras.utils import plot_model
@@ -19,10 +19,12 @@ from argparse import Namespace
 
 MODEL_DIR = "model"
 
-intermediate_dim = 512
-batch_size = 128
-latent_dim = 3
-epochs = 150
+individual_enc_1_dim = 1024
+individual_enc_2_dim = 64
+global_enc_1_dim = 512
+batch_size = 1
+latent_dim = 64
+epochs = 40
 
 # reparameterization trick
 # instead of sampling from Q(z|X), sample epsilon = N(0,I)
@@ -51,20 +53,24 @@ def train():
     song_tracks = dataset.shape[2]
     grid_size = dataset.shape[3]
     midi_notes_number = dataset.shape[4]
-    dataset = dataset.reshape((songs_number * song_length_in_bars, song_tracks * grid_size * midi_notes_number))
+    dataset = dataset.reshape((songs_number, song_length_in_bars, song_tracks * grid_size * midi_notes_number))
     x_train, x_test = np.array_split(dataset, 2)
-    original_dim = x_train.shape[1]
+    song_length_dim = x_train.shape[1]
+    pianoroll_dim = x_train.shape[2]
 
     #normalize
     # x_train = x_train.astype('float32') / midi_notes_number
     # x_test = x_test.astype('float32') / midi_notes_number
 
-    input_shape = (original_dim,)
+    input_shape = (song_length_dim, pianoroll_dim)
 
     # VAE model = encoder + decoder
     # build encoder model
     inputs = Input(shape=input_shape, name='encoder_input')
-    x = Dense(intermediate_dim, activation='relu')(inputs)
+    x = TimeDistributed(Dense(individual_enc_1_dim, activation='relu'))(inputs)
+    x = TimeDistributed(Dense(individual_enc_2_dim, activation='relu'))(x)
+    x = Flatten()(x)
+    x = Dense(global_enc_1_dim, activation='relu')(x)
     z_mean = Dense(latent_dim, name='z_mean')(x)
     z_log_var = Dense(latent_dim, name='z_log_var')(x)
 
@@ -79,8 +85,11 @@ def train():
 
     # build decoder model
     latent_inputs = Input(shape=(latent_dim,), name='z_sampling')
-    x = Dense(intermediate_dim, activation='relu')(latent_inputs)
-    outputs = Dense(original_dim, activation='sigmoid')(x)
+    x = Dense(global_enc_1_dim, activation='relu')(latent_inputs)
+    x = Dense((input_shape[0]*individual_enc_2_dim), activation='relu')(x)
+    x = Reshape((input_shape[0], individual_enc_2_dim))(x)
+    x = TimeDistributed(Dense(individual_enc_1_dim, activation='relu'))(x)
+    outputs = Dense(pianoroll_dim, activation='sigmoid')(x)
 
     # instantiate decoder model
     decoder = Model(latent_inputs, outputs, name='decoder')
@@ -96,7 +105,7 @@ def train():
     # VAE loss = mse_loss or xent_loss + kl_loss
     reconstruction_loss = mse(inputs, outputs)
 
-    reconstruction_loss *= original_dim
+    reconstruction_loss *= pianoroll_dim
     kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
     kl_loss = K.sum(kl_loss, axis=-1)
     kl_loss *= -0.5
@@ -137,8 +146,10 @@ def generate_sample():
     x_decoded = decoder.predict(z_sample)
     x_decoded = np.around(x_decoded)
     x_decoded = (x_decoded * 64)
-    x_decoded = x_decoded.reshape(shapes['song_tracks'], shapes['grid_size'], shapes['midi_notes_number'])
-    x_decoded = np.expand_dims(x_decoded, axis=0)
+    x_decoded = x_decoded.reshape(shapes['song_length_in_bars'],
+                                  shapes['song_tracks'],
+                                  shapes['grid_size'],
+                                  shapes['midi_notes_number'])
     pypianoroll_midi.write_song_to_midi(x_decoded, "output.mid")
     print(x_decoded)
 
