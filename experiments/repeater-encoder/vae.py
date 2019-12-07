@@ -24,7 +24,7 @@ individual_enc_2_dim = 64
 global_enc_1_dim = 512
 batch_size = 1
 latent_dim = 64
-epochs = 40
+epochs = 1
 
 # reparameterization trick
 # instead of sampling from Q(z|X), sample epsilon = N(0,I)
@@ -54,7 +54,8 @@ def train():
     grid_size = dataset.shape[3]
     midi_notes_number = dataset.shape[4]
     dataset = dataset.reshape((songs_number, song_length_in_bars, song_tracks * grid_size * midi_notes_number))
-    x_train, x_test = np.array_split(dataset, 2)
+    split_proportion = (min(2,round(dataset.shape[0]*0.2)))
+    x_train, x_test = dataset[:-split_proportion], dataset[-split_proportion:]
     song_length_dim = x_train.shape[1]
     pianoroll_dim = x_train.shape[2]
 
