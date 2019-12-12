@@ -74,13 +74,17 @@ def song_to_midi(song: []):
     for quant, instruments in enumerate(song):
         for instrument, notes in enumerate(instruments):
             for note, velocity in enumerate(notes):
-                if (quant == 32 and instrument == 29 and note == 59):
+                if quant == 32 and instrument == 29 and note == 59:
                     print('got')
                 if prev_state[instrument][note] == 0 and velocity != 0:
-                    track.append(mido.Message('note_on', channel=2, note=note, velocity=velocity, time=math.ceil(mido.second2tick(time, DEFAULT_TICKS_PER_BEAT, DEFAULT_TEMPO))))
+                    track.append(mido.Message('note_on', channel=2, note=note, velocity=velocity,
+                                              time=math.ceil(mido.second2tick(time, DEFAULT_TICKS_PER_BEAT,
+                                                                              DEFAULT_TEMPO))))
                     time = 0
                 if prev_state[instrument][note] != 0 and (velocity == 0 or quant == len(song)-1):
-                    track.append(mido.Message('note_off', channel=2, note=note, velocity=0, time=math.ceil(mido.second2tick(time, DEFAULT_TICKS_PER_BEAT, DEFAULT_TEMPO))))
+                    track.append(mido.Message('note_off', channel=2, note=note, velocity=0,
+                                              time=math.ceil(mido.second2tick(time, DEFAULT_TICKS_PER_BEAT,
+                                                                              DEFAULT_TEMPO))))
                     time = 0
 
         prev_state = instruments
@@ -88,7 +92,6 @@ def song_to_midi(song: []):
 
     output.tracks.append(track)
     output.save('1.mid')
-
 
 
 def main():
