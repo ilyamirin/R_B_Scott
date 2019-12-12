@@ -15,6 +15,15 @@ FILE_PATH = Path('song.mid')
 log = Logger("midi_converter", logging.DEBUG)
 
 
+def append_note(programs: [], active_notes: [], notes: [], msg: mido.Message, current_time: float):
+    instrument = programs[msg.channel]
+    note = active_notes[instrument][msg.note]
+    assert note is not None
+    note.end_time = current_time
+    notes.append(note)
+    active_notes[instrument][msg.note] = None
+
+
 def midi_to_notes(midi: mido.MidiFile) -> List[Note]:
     """Convert midi to array of notes"""
     notes: List[Note] = []
@@ -34,17 +43,15 @@ def midi_to_notes(midi: mido.MidiFile) -> List[Note]:
 
         if msg.type == 'note_on' and msg.velocity != 0:
             instrument = programs[msg.channel]
+            # if note changes velocity
+            active_note = active_notes[instrument][msg.note]
+            if active_note is not None:
+                append_note(programs, active_notes, notes, msg, current_time)
+
             active_notes[instrument][msg.note] = Note(msg.note, instrument, msg.velocity, current_time)
 
-        # todo: check note change velocity
-
         if msg.type == 'note_off' or (msg.type == 'note_on' and msg.velocity == 0):
-            instrument = programs[msg.channel]
-            note = active_notes[instrument][msg.note]
-            assert note is not None
-            note.end_time = current_time
-            notes.append(note)
-            active_notes[instrument][msg.note] = None
+            append_note(programs, active_notes, notes, msg, current_time)
 
     return notes
 
