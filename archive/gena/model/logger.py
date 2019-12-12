@@ -1,7 +1,7 @@
 import logging
 import sys
 
-logger = logging.getLogger("gena")
+logger = logging.getLogger("genb")
 
 
 def configure_logger():

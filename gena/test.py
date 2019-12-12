@@ -1,16 +1,10 @@
-import argparse
-import librosa
+from mido import MidiFile
 
-def parse_arguments():
-    parser = argparse.ArgumentParser(description="Description")
-    parser.add_argument('--data_dir', '-D', type=str, required=True)
-    return parser.parse_args()
+midi = MidiFile("1.mid")
+for msg in midi:
+    print(msg)
 
-
-def main():
-    l = librosa.load("./data_dir/01. Breeze.mp3")
-    arguments = parse_arguments()
-
-
-if __name__ == '__main__':
-    main()
+print("===============")
+midi = MidiFile("song.mid")
+for msg in midi:
+    print(msg)

@@ -1,39 +1,42 @@
 import math
-from pathlib import Path
+
 import tensorflow as tf
 from tensorflow import keras
+
 from .batch_logger import NBatchLogger
-from logger import logger
-from constants import *
+from .logger import logger
 
 
 class GenaModel(tf.keras.Sequential):
-    def __init__(self):
-        """Initializes the BDB Genb model.
+    def __init__(self, sample_size):
+        """Initializes the BDB Gena model.
+
+        :param int sample_size:how many data points to take for the input
         """
 
         super(GenaModel, self).__init__()
-        mn = QUANTIZATION * NOTES * TRACKS
+        self.sample_size = sample_size
 
         layers = [
-            keras.layers.LSTM(100, input_shape=(1, QUANTIZATION * NOTES * TRACKS), return_sequences=True, dropout=.3),
-            keras.layers.LSTM(10, return_sequences=True, dropout=.3),
-            keras.layers.LSTM(100, return_sequences=False, dropout=.3),
-            keras.layers.Dense(QUANTIZATION * NOTES * TRACKS),
-
+            keras.layers.LSTM(sample_size, input_shape=(None, 1), return_sequences=True, dropout=.3),
+            keras.layers.LSTM(sample_size // 4, return_sequences=True, dropout=.3),
+            keras.layers.LSTM(sample_size // 16, return_sequences=True, dropout=.3),
+            keras.layers.LSTM(sample_size // 4, return_sequences=False, dropout=.3),
+            keras.layers.Dense(sample_size)
         ]
         self.compile(optimizer='adam', loss='mean_absolute_error')
 
         for layer in layers:
             self.add(layer)
 
-    def train(self, dataset, batch_size, checkpoint_path: Path, checkpoint_period: int):
+    def train(self, dataset, checkpoint_path, checkpoint_period):
         """Train model"""
 
-        cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=str(checkpoint_path.absolute()), verbose=1, save_freq=checkpoint_period)
-        self.fit(dataset, dataset, batch_size=batch_size, epochs=1000, verbose=2, callbacks=[NBatchLogger(), cp_callback])
+        cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path, verbose=1, save_weights_only=True,
+                                                         save_freq=checkpoint_period)
+        self.fit(dataset, epochs=1, verbose=2, steps_per_epoch=None, callbacks=[NBatchLogger(), cp_callback])
 
-    def generate_midi(self, samples, filename):
+    def generate_wav(self, samples, filename):
         """Generate wav file
         :param int samples: Amount of samples
         :param str filename:

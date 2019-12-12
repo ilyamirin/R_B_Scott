@@ -1,5 +1,5 @@
 import argparse
-from model import logger
+import logger
 from model.gena import GenaModel
 
 SAMPLING_RATE = 44100              #TODO: убрать копипасту
