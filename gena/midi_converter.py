@@ -18,7 +18,8 @@ log = Logger("midi_converter", logging.DEBUG)
 def append_note(programs: [], active_notes: [], notes: [], msg: mido.Message, current_time: float):
     instrument = programs[msg.channel]
     note = active_notes[instrument][msg.note]
-    assert note is not None
+    if note is None:
+        return
     note.end_time = current_time
     notes.append(note)
     active_notes[instrument][msg.note] = None
@@ -31,8 +32,8 @@ def midi_to_notes(midi: mido.MidiFile) -> List[Note]:
     programs = [0 for _ in range(MIDI_CHANNELS_NUMBER)]
     current_time: float = 0
 
-    for msg in midi:
-        log.debug(msg)
+    for message_index, msg in enumerate(midi):
+        log.debug("{}: {}".format(message_index, msg))
         current_time += msg.time
 
         if msg.is_meta:
