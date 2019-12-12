@@ -1,18 +1,17 @@
+import logging
 import math
+from pathlib import Path
 from typing import List
 
 import mido
-from pathlib import Path
-import logging
-
 from mido.midifiles.midifiles import DEFAULT_TICKS_PER_BEAT, DEFAULT_TEMPO
 
-from note import Note
 from constants import *
 from logger import Logger
+from note import Note
 
 FILE_PATH = Path('song.mid')
-log = Logger("midi_converter", logging.DEBUG)
+log = Logger("midi_converter", logging.INFO)
 
 
 def append_note(programs: [], active_notes: [], notes: [], msg: mido.Message, current_time: float):
