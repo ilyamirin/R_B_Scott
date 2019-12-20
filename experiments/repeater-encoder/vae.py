@@ -28,6 +28,7 @@ epochs = 80
 
 import os
 import logger
+Log = logger.Logger('log.txt')
 
 # reparameterization trick
 # instead of sampling from Q(z|X), sample epsilon = N(0,I)
@@ -49,7 +50,6 @@ def sampling(args):
 
 
 def train():
-    Log = logger.Logger('log.txt')
     dataset = pypianoroll_midi.load_dataset()
     songs_number, song_length_in_bars, song_tracks, grid_size, midi_notes_number = dataset.shape
     dataset = dataset.reshape((songs_number, song_length_in_bars, song_tracks * grid_size * midi_notes_number))
