@@ -19,12 +19,15 @@ from argparse import Namespace
 
 MODEL_DIR = "model"
 
-individual_enc_1_dim = 1600
-individual_enc_2_dim = 768
-global_enc_1_dim = 394
+individual_enc_1_dim = 128
+individual_enc_2_dim = 64
+global_enc_1_dim = 32
 batch_size = 1
-latent_dim = 32
-epochs = 3000
+latent_dim = 6
+epochs = 80
+
+import os
+import logger
 
 # reparameterization trick
 # instead of sampling from Q(z|X), sample epsilon = N(0,I)
@@ -47,6 +50,7 @@ def sampling(args):
     return z_mean + K.exp(0.5 * z_log_var) * epsilon
 
 def train():
+    Log = logger.Logger('log.txt')
     dataset = pypianoroll_midi.load_dataset()
     songs_number = dataset.shape[0]
     song_length_in_bars = dataset.shape[1]
@@ -139,6 +143,8 @@ def train():
     shapes_file = open(os.path.join(MODEL_DIR, "shapes.pkl"), "wb")
     pickle.dump(shapes, shapes_file)
     shapes_file.close()
+    Log.close()
+
 
 def generate_sample():
     decoder = load_model(os.path.join(MODEL_DIR, 'decoder.h5'))
@@ -147,7 +153,10 @@ def generate_sample():
     shapes_file.close()
     z_sample = np.array([np.random.randint(-4, high=4, size=latent_dim)])
     x_decoded = decoder.predict(z_sample)
-    x_decoded = np.around(x_decoded)
+    medium = (x_decoded.max() + x_decoded.min()) / 2
+    x_decoded[x_decoded >= medium] = 1
+    x_decoded[x_decoded < medium] = 0
+    #x_decoded = np.around(x_decoded)
     x_decoded = (x_decoded * 64)
     x_decoded = x_decoded.reshape(shapes['song_length_in_bars'],
                                   shapes['song_tracks'],
