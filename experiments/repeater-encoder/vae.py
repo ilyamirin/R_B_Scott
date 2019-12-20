@@ -4,7 +4,7 @@ from __future__ import print_function
 
 from keras.layers import Lambda, Input, Dense, TimeDistributed, Flatten, Reshape, BatchNormalization, Dropout
 from keras.models import Model
-from keras.losses import mse
+from keras.losses import mse, binary_crossentropy
 from keras.utils import plot_model
 from keras import backend as K
 from keras.models import load_model
@@ -92,20 +92,20 @@ def train():
     vae = Model(inputs, outputs, name='vae_mlp')
 
     # LOSS
-    reconstruction_loss = mse(inputs, outputs)
-    reconstruction_loss *= pianoroll_dim
-    kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
-    kl_loss = K.sum(kl_loss, axis=-1)
-    kl_loss *= -0.5
-    vae_loss = K.mean(reconstruction_loss + kl_loss)
+    xent_loss = binary_crossentropy(inputs, outputs)
+    kl_loss = 0.1 * K.mean(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=None)
+    vae_loss = xent_loss - kl_loss
     vae.add_loss(vae_loss)
 
     vae.compile(optimizer='adam')
     plot_model(vae, to_file='vae_mlp.png', show_shapes=True)
     vae.fit(x_train, epochs=epochs, batch_size=batch_size, validation_data=(x_test, None))
 
+    x_test_encoded = encoder.predict(x_test, batch_size=batch_size)
+
     save_model(encoder, decoder, vae)
     save_track_shape([songs_number, song_length_in_bars, song_tracks, grid_size, midi_notes_number])
+    min_max_predicted_test(np.amin(x_test_encoded), np.amax(x_test_encoded))
 
 
 def save_model(encoder, decoder, vae):
@@ -126,13 +126,27 @@ def save_track_shape(shape):
     shapes_file.close()
     Log.close()
 
+def min_max_predicted_test(min_val, max_val):
+    if not os.path.exists(MODEL_DIR):
+        os.mkdir(MODEL_DIR)
+    keys = ['min', 'max']
+    vals = [min_val, max_val]
+    res = dict(zip(keys, vals))
+    res_file = open(os.path.join(MODEL_DIR, "min_max_predicted_test.pkl"), "wb")
+    pickle.dump(res, res_file)
+    res_file.close()
+
 
 def generate_sample():
     decoder = load_model(os.path.join(MODEL_DIR, 'decoder.h5'))
     shapes_file = open(os.path.join(MODEL_DIR, "shapes.pkl"), "rb")
     shapes = pickle.load(shapes_file)
     shapes_file.close()
-    z_sample = np.array([np.random.randint(-4, high=4, size=latent_dim)])
+    minmax_file = open(os.path.join(MODEL_DIR, "min_max_predicted_test.pkl"), "rb")
+    minmax = pickle.load(minmax_file)
+    print(minmax)
+    minmax_file.close()
+    z_sample = np.array([np.random.uniform(minmax['min'], high=minmax['max'], size=latent_dim)])
     x_decoded = decoder.predict(z_sample)
     medium = (x_decoded.max() + x_decoded.min()) / 2
     x_decoded[x_decoded >= medium] = 1
