@@ -48,16 +48,17 @@ class GenaModel(tf.keras.Sequential):
         :param int quants: Amount of samples
         :param str filename:
         """
-        x = tf.zeros((1, SEQUENCE_LENGTH - 1, NOTES_IN_QUANT))
-        x = tf.concat([x, tf.random.uniform((1, 1, NOTES_IN_QUANT))], 1)
+        roll = tf.zeros((SEQUENCE_LENGTH - 1) * NOTES_IN_QUANT)
+        roll = tf.concat([roll, tf.random.uniform(NOTES_IN_QUANT)], 0)
 
         for i in range(quants):
             self.logger.info("Generating {0}/{1}\n".format(i, quants))
-            sequence = x[len(x)-1-SEQUENCE_LENGTH:]
+            sequence = roll[len(roll) - (SEQUENCE_LENGTH * NOTES_IN_QUANT):]
+            sequence = tf.reshape(sequence, (1, SEQUENCE_LENGTH, NOTES_IN_QUANT))
             answ = self.predict(sequence)
             # print(answ)
             # x = tf.reshape(answ, (1, self.sample_size, 1))
-            x = tf.concat([x, answ])
+            roll = tf.concat([tf.reshape(answ, -1), answ])
 
-        encoded = tf.audio.encode_wav(tf.reshape(x, (-1, 1)), 44200)
+        encoded = tf.audio.encode_wav(tf.reshape(roll, (-1, 1)), 44200)
         tf.io.write_file(filename, encoded)
