@@ -10,7 +10,7 @@ import numpy as np
 from constants import *
 
 # Error without this line.
-# TODO: check if everything workng witout
+# TODO: check if everything working without
 # physical_devices = tf.config.experimental.list_physical_devices('GPU')
 # tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
@@ -65,11 +65,11 @@ def main():
     x = []
     y = []
     for i in range(0, len(roll), NOTES_IN_QUANT):
-        rb = i + SEQUENCE_LENGTH*NOTES_IN_QUANT
-        if rb+1+NOTES_IN_QUANT >= len(roll):
+        right_border = i + SEQUENCE_LENGTH * NOTES_IN_QUANT
+        if right_border + 1 + NOTES_IN_QUANT >= len(roll):
             break
-        x.append(roll[i:rb])
-        y.append(roll[rb+1:rb+1+NOTES_IN_QUANT])
+        x.append(roll[i:right_border])
+        y.append(roll[right_border+1:right_border+1+NOTES_IN_QUANT])
 
     x = np.array(x)
     y = np.array(y)
@@ -79,7 +79,7 @@ def main():
     gena = GenaModel()
     dataset = tf.data.Dataset.from_tensor_slices((x, y))
     gena.train(dataset, CHECKPOINT_DIR/CHECKPOINT_FILENAME, CHECKPOINT_PERIOD)
-
+    gena.generate_midi(10, "result.mid")
     print('end')
 
 

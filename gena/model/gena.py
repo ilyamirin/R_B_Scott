@@ -14,12 +14,12 @@ class GenaModel(tf.keras.Sequential):
         """
 
         super(GenaModel, self).__init__()
-        self.log = Logger("gena", logging.DEBUG)
+        self.logger = Logger("gena", logging.DEBUG)
 
         layers = [
-            K.layers.LSTM(256, input_shape=(SEQUENCE_LENGTH, NOTES_IN_QUANT), return_sequences=True, dropout=.3),
-            K.layers.LSTM(512, return_sequences=False),
-            K.layers.Dense(256),
+            K.layers.LSTM(32, input_shape=(SEQUENCE_LENGTH, NOTES_IN_QUANT), return_sequences=True, dropout=.3),
+            K.layers.LSTM(16, return_sequences=False),
+            K.layers.Dense(32),
             K.layers.Dense(NOTES_IN_QUANT)
         ]
 
@@ -35,29 +35,29 @@ class GenaModel(tf.keras.Sequential):
 
         self.compile(optimizer='adam', loss='mean_absolute_error')
 
-
     def train(self, dataset, checkpoint_path: Path, checkpoint_period: int):
         """Train model"""
 
-        cp_callback = K.callbacks.ModelCheckpoint(filepath=str(checkpoint_path.absolute()), verbose=1, save_freq=checkpoint_period)
-        self.fit(dataset, epochs=10, verbose=2, callbacks=[NBatchLogger(), cp_callback])
+        checkpoint_callback = K.callbacks.ModelCheckpoint(filepath=str(checkpoint_path.absolute()), verbose=1,
+                                                          save_freq=checkpoint_period)
+        # self.fit(dataset, epochs=10, verbose=2, callbacks=[NBatchLogger(), checkpoint_callback])
+        self.fit(dataset, epochs=10, verbose=2, callbacks=[NBatchLogger()])
 
-    def generate_midi(self, samples, filename):
+    def generate_midi(self, quants, filename):
         """Generate wav file
-        :param int samples: Amount of samples
+        :param int quants: Amount of samples
         :param str filename:
         """
+        x = tf.zeros((SEQUENCE_LENGTH - 1, NOTES_IN_QUANT, 1))
+        x = tf.stack([x, tf.random.uniform((1, NOTES_IN_QUANT, 1))])
 
-        x = tf.random.uniform((1, self.sample_size, 1))
-        x = tf.data.Dataset.from_tensors(x)
-        res = []
-        buckets_to_gen = math.ceil(samples / self.sample_size)
-        for i in range(buckets_to_gen):
-            logger.info("Generating {0}/{1}\n".format(i*self.sample_size, samples))
-            answ = self.predict(x)
+        for i in range(quants):
+            self.logger.info("Generating {0}/{1}\n".format(i, quants))
+            sequence = x[len(x)-1-SEQUENCE_LENGTH:]
+            answ = self.predict(sequence)
             # print(answ)
-            x = tf.reshape(answ, (1, self.sample_size, 1))
-            res.append(x)
+            # x = tf.reshape(answ, (1, self.sample_size, 1))
+            x.append(answ)
 
-        encoded = tf.audio.encode_wav(tf.reshape(res, (-1, 1)), 44200)
+        encoded = tf.audio.encode_wav(tf.reshape(x, (-1, 1)), 44200)
         tf.io.write_file(filename, encoded)
