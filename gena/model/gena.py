@@ -7,6 +7,7 @@ from logger import Logger
 import logging
 from constants import *
 from midi_converter import song_to_midi
+import numpy as np
 
 
 class GenaModel(tf.keras.Sequential):
@@ -42,7 +43,7 @@ class GenaModel(tf.keras.Sequential):
         checkpoint_callback = K.callbacks.ModelCheckpoint(filepath=str(checkpoint_path.absolute()), verbose=1,
                                                           save_freq=checkpoint_period)
         # self.fit(dataset, epochs=10, verbose=2, callbacks=[NBatchLogger(), checkpoint_callback])
-        self.fit(dataset, epochs=10, verbose=2, callbacks=[NBatchLogger()])
+        self.fit(dataset, epochs=5, verbose=2)
 
     def generate_midi(self, quants, filename):
         """Generate wav file
@@ -61,8 +62,9 @@ class GenaModel(tf.keras.Sequential):
             # x = tf.reshape(answ, (1, self.sample_size, 1))
             roll = tf.concat([roll, tf.reshape(answ, [-1])], 0)
         roll = tf.reshape(roll, (quants+SEQUENCE_LENGTH, MIDI_INSTRUMENTS_NUMBER, MIDI_NOTES_NUMBER))
+        roll = tf.math.scalar_mul(127, roll)
         roll = tf.dtypes.cast(tf.math.round(roll), dtype=tf.int32)
-
+        roll = np.array(roll)
         song_to_midi(roll)
         # encoded = tf.audio.encode_wav(tf.reshape(roll, (-1, 1)), 44200)
         # tf.io.write_file(filename, encoded)

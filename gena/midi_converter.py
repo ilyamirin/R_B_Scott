@@ -81,6 +81,10 @@ def song_to_midi(song: []):
     for quant, instruments in enumerate(song):
         for instrument, notes in enumerate(instruments):
             for note, velocity in enumerate(notes):
+                #todo: fix math
+                if velocity < 0:
+                    velocity = 0
+
                 if prev_state[instrument][note] == 0 and velocity != 0:
                     track.append(mido.Message('note_on', channel=2, note=note, velocity=velocity,
                                               time=math.ceil(mido.second2tick(time, DEFAULT_TICKS_PER_BEAT,
