@@ -48,8 +48,8 @@ class GenaModel(tf.keras.Sequential):
         :param int quants: Amount of samples
         :param str filename:
         """
-        x = tf.zeros((SEQUENCE_LENGTH - 1, NOTES_IN_QUANT, 1))
-        x = tf.stack([x, tf.random.uniform((1, NOTES_IN_QUANT, 1))])
+        x = tf.zeros((1, SEQUENCE_LENGTH - 1, NOTES_IN_QUANT))
+        x = tf.concat([x, tf.random.uniform((1, 1, NOTES_IN_QUANT))], 0)
 
         for i in range(quants):
             self.logger.info("Generating {0}/{1}\n".format(i, quants))
