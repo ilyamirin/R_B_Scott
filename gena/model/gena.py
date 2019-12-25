@@ -61,6 +61,7 @@ class GenaModel(tf.keras.Sequential):
             # x = tf.reshape(answ, (1, self.sample_size, 1))
             roll = tf.concat([roll, tf.reshape(answ, [-1])], 0)
         roll = tf.reshape(roll, (quants+SEQUENCE_LENGTH, MIDI_INSTRUMENTS_NUMBER, MIDI_NOTES_NUMBER))
+        roll = tf.dtypes.cast(tf.math.round(roll), dtype=tf.int32)
 
         song_to_midi(roll)
         # encoded = tf.audio.encode_wav(tf.reshape(roll, (-1, 1)), 44200)
