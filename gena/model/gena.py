@@ -49,7 +49,7 @@ class GenaModel(tf.keras.Sequential):
         :param str filename:
         """
         x = tf.zeros((1, SEQUENCE_LENGTH - 1, NOTES_IN_QUANT))
-        x = tf.concat([x, tf.random.uniform((1, 1, NOTES_IN_QUANT))], 0)
+        x = tf.concat([x, tf.random.uniform((1, 1, NOTES_IN_QUANT))], 1)
 
         for i in range(quants):
             self.logger.info("Generating {0}/{1}\n".format(i, quants))
@@ -57,7 +57,7 @@ class GenaModel(tf.keras.Sequential):
             answ = self.predict(sequence)
             # print(answ)
             # x = tf.reshape(answ, (1, self.sample_size, 1))
-            x.append(answ)
+            x = tf.concat([x, answ])
 
         encoded = tf.audio.encode_wav(tf.reshape(x, (-1, 1)), 44200)
         tf.io.write_file(filename, encoded)
