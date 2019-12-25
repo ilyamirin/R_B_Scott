@@ -96,7 +96,7 @@ def song_to_midi(song: []):
         time += 1/QUANTIZATION
 
     output.tracks.append(track)
-    output.save('1.mid')
+    output.save('result.mid')
 
 
 def main():

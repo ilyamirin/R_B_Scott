@@ -6,6 +6,7 @@ from .batch_logger import NBatchLogger
 from logger import Logger
 import logging
 from constants import *
+from midi_converter import song_to_midi
 
 
 class GenaModel(tf.keras.Sequential):
@@ -59,7 +60,8 @@ class GenaModel(tf.keras.Sequential):
             # print(answ)
             # x = tf.reshape(answ, (1, self.sample_size, 1))
             roll = tf.concat([roll, tf.reshape(answ, [-1])], 0)
-        roll = tf.reshape(roll, (-1, 1))
-        roll = tf.math.scalar_mul(128, roll)
-        encoded = tf.audio.encode_wav(roll, 44200)
-        tf.io.write_file(filename, encoded)
+        roll = tf.reshape(roll, (quants+SEQUENCE_LENGTH, MIDI_INSTRUMENTS_NUMBER, MIDI_NOTES_NUMBER))
+
+        song_to_midi(roll)
+        # encoded = tf.audio.encode_wav(tf.reshape(roll, (-1, 1)), 44200)
+        # tf.io.write_file(filename, encoded)
