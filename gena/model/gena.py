@@ -41,7 +41,7 @@ class GenaModel(tf.keras.Sequential):
         checkpoint_callback = K.callbacks.ModelCheckpoint(filepath=str(checkpoint_path.absolute()), verbose=1,
                                                           save_freq=checkpoint_period)
         # self.fit(dataset, epochs=10, verbose=2, callbacks=[NBatchLogger(), checkpoint_callback])
-        self.fit(dataset, epochs=200, verbose=2, callbacks=[NBatchLogger()])
+        self.fit(dataset, epochs=10, verbose=2, callbacks=[NBatchLogger()])
 
     def generate_midi(self, quants, filename):
         """Generate wav file
@@ -59,6 +59,7 @@ class GenaModel(tf.keras.Sequential):
             # print(answ)
             # x = tf.reshape(answ, (1, self.sample_size, 1))
             roll = tf.concat([roll, tf.reshape(answ, [-1])], 0)
-
-        encoded = tf.audio.encode_wav(tf.reshape(roll, (-1, 1)), 44200)
+        roll = tf.reshape(roll, (-1, 1))
+        roll = tf.math.scalar_mul(128, roll)
+        encoded = tf.audio.encode_wav(roll, 44200)
         tf.io.write_file(filename, encoded)
