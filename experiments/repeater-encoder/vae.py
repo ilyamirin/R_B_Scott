@@ -19,11 +19,11 @@ from argparse import Namespace
 
 MODEL_DIR = "model"
 
-individual_enc_1_dim = 128
+individual_enc_1_dim = 1024
 individual_enc_2_dim = 64
 global_enc_1_dim = 32
 batch_size = 1
-latent_dim = 6
+latent_dim = 150
 epochs = 80
 
 import os
