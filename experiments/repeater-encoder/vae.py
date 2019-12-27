@@ -104,9 +104,23 @@ def train():
     x_test_encoded = encoder.predict(x_test, batch_size=batch_size)
 
     save_model(encoder, decoder, vae)
-    save_track_shape([songs_number, song_length_in_bars, song_tracks, grid_size, midi_notes_number])
-    min_max_predicted_test(np.amin(x_test_encoded), np.amax(x_test_encoded))
+    save_meta({
+        'songs_number': songs_number,
+        'song_length_in_bars': song_length_in_bars,
+        'song_tracks': song_tracks,
+        'grid_size': grid_size,
+        'midi_notes_number': midi_notes_number,
+        'min_sample_in_test_data': np.amin(x_test_encoded),
+        'max_sample_in_test_data': np.amax(x_test_encoded),
+    })
 
+def save_meta(meta):
+    #meta is a key-value dict
+    if not os.path.exists(MODEL_DIR):
+        os.mkdir(MODEL_DIR)
+    meta_file = open(os.path.join(MODEL_DIR, "meta.pkl"), "wb")
+    pickle.dump(meta, meta_file)
+    meta_file.close()
 
 def save_model(encoder, decoder, vae):
     if not os.path.exists(MODEL_DIR):
@@ -115,47 +129,24 @@ def save_model(encoder, decoder, vae):
     encoder.save(os.path.join(MODEL_DIR, 'encoder.h5'))
     decoder.save(os.path.join(MODEL_DIR, 'decoder.h5'))
 
-
-def save_track_shape(shape):
-    if not os.path.exists(MODEL_DIR):
-        os.mkdir(MODEL_DIR)
-    keys = ['songs_number', 'song_length_in_bars', 'song_tracks', 'grid_size', 'midi_notes_number']
-    shapes = dict(zip(keys, shape))
-    shapes_file = open(os.path.join(MODEL_DIR, "shapes.pkl"), "wb")
-    pickle.dump(shapes, shapes_file)
-    shapes_file.close()
-    Log.close()
-
-def min_max_predicted_test(min_val, max_val):
-    if not os.path.exists(MODEL_DIR):
-        os.mkdir(MODEL_DIR)
-    keys = ['min', 'max']
-    vals = [min_val, max_val]
-    res = dict(zip(keys, vals))
-    res_file = open(os.path.join(MODEL_DIR, "min_max_predicted_test.pkl"), "wb")
-    pickle.dump(res, res_file)
-    res_file.close()
-
-
 def generate_sample():
     decoder = load_model(os.path.join(MODEL_DIR, 'decoder.h5'))
-    shapes_file = open(os.path.join(MODEL_DIR, "shapes.pkl"), "rb")
-    shapes = pickle.load(shapes_file)
-    shapes_file.close()
-    minmax_file = open(os.path.join(MODEL_DIR, "min_max_predicted_test.pkl"), "rb")
-    minmax = pickle.load(minmax_file)
-    print(minmax)
-    minmax_file.close()
-    z_sample = np.array([np.random.uniform(minmax['min'], high=minmax['max'], size=latent_dim)])
+    meta_file = open(os.path.join(MODEL_DIR, "meta.pkl"), "rb")
+    meta = pickle.load(meta_file)
+    meta_file.close()
+    print("min:{} max:{}".format(meta['min_sample_in_test_data'], meta['max_sample_in_test_data']))
+    z_sample = np.array([np.random.uniform(meta['min_sample_in_test_data'],
+                                           high=meta['max_sample_in_test_data'],
+                                           size=latent_dim)])
     x_decoded = decoder.predict(z_sample)
     medium = (x_decoded.max() + x_decoded.min()) / 2
     x_decoded[x_decoded >= medium] = 1
     x_decoded[x_decoded < medium] = 0
     #x_decoded = np.around(x_decoded)
     x_decoded = (x_decoded * 64)
-    x_decoded = x_decoded.reshape(shapes['song_length_in_bars'],
-                                  shapes['song_tracks'],
-                                  shapes['grid_size'],
-                                  shapes['midi_notes_number'])
+    x_decoded = x_decoded.reshape(meta['song_length_in_bars'],
+                                  meta['song_tracks'],
+                                  meta['grid_size'],
+                                  meta['midi_notes_number'])
     pypianoroll_midi.write_song_to_midi(x_decoded, "output.mid")
 
