@@ -19,9 +19,9 @@ class GenaModel(tf.keras.Sequential):
         self.logger = Logger("gena", logging.DEBUG)
 
         layers = [
-            K.layers.LSTM(2000, input_shape=(SEQUENCE_LENGTH, NOTES_IN_QUANT), return_sequences=True, dropout=.3),
-            K.layers.LSTM(200, return_sequences=True),
-            K.layers.LSTM(2000, return_sequences=False),
+            K.layers.LSTM(100, input_shape=(SEQUENCE_LENGTH, NOTES_IN_QUANT), return_sequences=True, dropout=.3),
+            K.layers.LSTM(10, return_sequences=True),
+            K.layers.LSTM(100, return_sequences=False),
             K.layers.Dense(NOTES_IN_QUANT, activation='tanh')
         ]
 
@@ -34,8 +34,9 @@ class GenaModel(tf.keras.Sequential):
         # ]
         for layer in layers:
             self.add(layer)
+        l = tf.keras.losses.CosineSimilarity()
 
-        self.compile(optimizer='adam', loss=tf.keras.losses.MeanAbsolutePercentageError())
+        self.compile(optimizer='adam', loss=l)
 
     def train(self, dataset, checkpoint_path: Path, checkpoint_period: int):
         """Train model"""
@@ -50,8 +51,9 @@ class GenaModel(tf.keras.Sequential):
         :param int quants: Amount of samples
         :param str filename:
         """
-        roll = tf.zeros((SEQUENCE_LENGTH - 1) * NOTES_IN_QUANT)
-        roll = tf.concat([roll, tf.random.uniform([NOTES_IN_QUANT])], 0)
+        # roll = tf.zeros((SEQUENCE_LENGTH - 1) * NOTES_IN_QUANT)
+        # roll = tf.concat([roll, tf.random.uniform([NOTES_IN_QUANT])], 0)
+        roll = tf.random.uniform([SEQUENCE_LENGTH*NOTES_IN_QUANT])
 
         for i in range(quants):
             self.logger.info("Generating {0}/{1}\n".format(i, quants))
