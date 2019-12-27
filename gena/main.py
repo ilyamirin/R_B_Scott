@@ -79,7 +79,7 @@ def main():
     gena = GenaModel()
     dataset = tf.data.Dataset.from_tensor_slices((x, y))
     gena.train(dataset, CHECKPOINT_DIR/CHECKPOINT_FILENAME, CHECKPOINT_PERIOD)
-    gena.generate_midi(10000, "result.mid")
+    gena.generate_midi(100, "result.mid")
     print('end')
 
 

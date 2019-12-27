@@ -19,10 +19,10 @@ class GenaModel(tf.keras.Sequential):
         self.logger = Logger("gena", logging.DEBUG)
 
         layers = [
-            K.layers.LSTM(32, input_shape=(SEQUENCE_LENGTH, NOTES_IN_QUANT), return_sequences=True, dropout=.3),
-            K.layers.LSTM(16, return_sequences=False),
-            K.layers.Dense(32),
-            K.layers.Dense(NOTES_IN_QUANT)
+            K.layers.LSTM(2000, input_shape=(SEQUENCE_LENGTH, NOTES_IN_QUANT), return_sequences=True, dropout=.3),
+            K.layers.LSTM(200, return_sequences=True),
+            K.layers.LSTM(2000, return_sequences=False),
+            K.layers.Dense(NOTES_IN_QUANT, activation='tanh')
         ]
 
         # layers = [
@@ -35,7 +35,7 @@ class GenaModel(tf.keras.Sequential):
         for layer in layers:
             self.add(layer)
 
-        self.compile(optimizer='adam', loss='mean_absolute_error')
+        self.compile(optimizer='adam', loss=tf.keras.losses.MeanAbsolutePercentageError())
 
     def train(self, dataset, checkpoint_path: Path, checkpoint_period: int):
         """Train model"""
@@ -43,7 +43,7 @@ class GenaModel(tf.keras.Sequential):
         checkpoint_callback = K.callbacks.ModelCheckpoint(filepath=str(checkpoint_path.absolute()), verbose=1,
                                                           save_freq=checkpoint_period)
         # self.fit(dataset, epochs=10, verbose=2, callbacks=[NBatchLogger(), checkpoint_callback])
-        self.fit(dataset, epochs=5, verbose=2)
+        self.fit(dataset, epochs=10, verbose=2, callbacks=[NBatchLogger()])
 
     def generate_midi(self, quants, filename):
         """Generate wav file
@@ -55,12 +55,11 @@ class GenaModel(tf.keras.Sequential):
 
         for i in range(quants):
             self.logger.info("Generating {0}/{1}\n".format(i, quants))
-            sequence = roll[len(roll) - (SEQUENCE_LENGTH * NOTES_IN_QUANT):]
-            sequence = tf.reshape(sequence, (1, SEQUENCE_LENGTH, NOTES_IN_QUANT))
-            answ = self.predict(sequence)
-            # print(answ)
-            # x = tf.reshape(answ, (1, self.sample_size, 1))
-            roll = tf.concat([roll, tf.reshape(answ, [-1])], 0)
+            time_sequence = roll[len(roll) - (SEQUENCE_LENGTH * NOTES_IN_QUANT):]
+            time_sequence = tf.reshape(time_sequence, (1, SEQUENCE_LENGTH, NOTES_IN_QUANT))
+            predicted = self.predict(time_sequence)
+            roll = tf.concat([roll, tf.reshape(predicted, [-1])], 0)
+
         roll = tf.reshape(roll, (quants+SEQUENCE_LENGTH, MIDI_INSTRUMENTS_NUMBER, MIDI_NOTES_NUMBER))
         roll = tf.math.scalar_mul(127, roll)
         roll = tf.dtypes.cast(tf.math.round(roll), dtype=tf.int32)
