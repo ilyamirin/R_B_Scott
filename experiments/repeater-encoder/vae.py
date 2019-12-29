@@ -8,11 +8,15 @@ from keras.losses import mse, binary_crossentropy
 from keras.utils import plot_model
 from keras import backend as K
 from keras.models import load_model
+from keras.backend.tensorflow_backend import set_session
+import tensorflow as tf
 
+import os
+import logger
 import numpy as np
 import matplotlib.pyplot as plt
 import pypianoroll_midi
-import os
+from data_generator import DataGenerator
 import pickle
 from argparse import Namespace
 
@@ -26,8 +30,6 @@ batch_size = 1
 latent_dim = 150
 epochs = 80
 
-import os
-import logger
 Log = logger.Logger('log.txt')
 
 # reparameterization trick
@@ -50,12 +52,17 @@ def sampling(args):
 
 
 def train():
-    dataset = pypianoroll_midi.load_dataset()
-    songs_number, song_length_in_bars, song_tracks, grid_size, midi_notes_number = dataset.shape
-    dataset = dataset.reshape((songs_number, song_length_in_bars, song_tracks * grid_size * midi_notes_number))
-    split_proportion = (max(2, round(len(dataset) * 0.2)))
-    x_train, x_test = dataset[:-split_proportion], dataset[-split_proportion:]
-    pianoroll_dim = x_train.shape[2]
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    session = tf.Session(config=config)
+    set_session(session)
+
+    song_length_in_bars, song_tracks, grid_size, midi_notes_number = pypianoroll_midi.get_dataset_shape()
+    pianoroll_dim = song_tracks * grid_size * midi_notes_number
+    split_proportion = (max(2, round(pypianoroll_midi.get_pianorolls_count() * 0.8)))
+    train_generator = DataGenerator(0, split_proportion, (song_length_in_bars, pianoroll_dim))
+    test_generator = DataGenerator(split_proportion, pypianoroll_midi.get_pianorolls_count(),
+                                   (song_length_in_bars, pianoroll_dim))
 
     #normalize
     # x_train = x_train.astype('float32') / midi_notes_number
@@ -99,13 +106,12 @@ def train():
 
     vae.compile(optimizer='adam')
     plot_model(vae, to_file='vae_mlp.png', show_shapes=True)
-    vae.fit(x_train, epochs=epochs, batch_size=batch_size, validation_data=(x_test, None))
+    vae.fit_generator(train_generator, epochs=epochs, validation_data=test_generator)
 
-    x_test_encoded = encoder.predict(x_test, batch_size=batch_size)
+    x_test_encoded = encoder.predict_generator(test_generator)
 
     save_model(encoder, decoder, vae)
     save_meta({
-        'songs_number': songs_number,
         'song_length_in_bars': song_length_in_bars,
         'song_tracks': song_tracks,
         'grid_size': grid_size,
