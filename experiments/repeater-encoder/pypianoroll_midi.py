@@ -35,8 +35,17 @@ def get_songs_metadata(songs_paths):
     non_empty_programs = {}
     non_empty_programs_count = 0
     max_song_length = 0
+    active_range = [MIDI_NOTES_NUMBER, 0]
     for path in songs_paths:
         song = read_midi_file(path)
+        try:
+            current_active_range = song.get_active_pitch_range()
+            active_range[0] = min(active_range[0], current_active_range[0])
+            active_range[1] = max(active_range[1], current_active_range[1])
+            if (active_range[0] > active_range[1]):
+                raise Exception('active range is incorrect')
+        except ValueError:
+            pass
         for track in song.tracks:
             if not (track.program in non_empty_programs or track.is_drum and MIDI_DRUM_PROGRAM in non_empty_programs):
                 # map existing programs into (0..num_existing_programs)
@@ -46,18 +55,20 @@ def get_songs_metadata(songs_paths):
                     non_empty_programs[track.program] = non_empty_programs_count
                 non_empty_programs_count += 1
             max_song_length = max(max_song_length, round(track.pianoroll.shape[0] / QUANTIZATION))
-    return non_empty_programs, max_song_length
+    return non_empty_programs, max_song_length, active_range
 
-def create_pianoroll(song_path, non_empty_programs, max_song_length):
+def create_pianoroll(song_path, non_empty_programs, max_song_length, active_range):
     #read song
     #- song: numpy array with shape (song length in bars, song tracks, grid size, midi notes number)
     song = read_midi_file(song_path)
 
     #create 3d piano roll from pypianoroll output
-    result = np.zeros(shape=(max_song_length, len(non_empty_programs), QUANTIZATION, MIDI_NOTES_NUMBER))
+    result = np.zeros(shape=(max_song_length, len(non_empty_programs), QUANTIZATION, active_range[1] - active_range[0]))
     for track_index, track in enumerate(song.tracks):
         for bar_index, bar in enumerate(np.split(track.pianoroll, indices_or_sections=round(track.pianoroll.shape[0] / QUANTIZATION))):
             track_program = (track.program, MIDI_DRUM_PROGRAM)[track.is_drum]
+            bar = np.delete(bar, slice(active_range[1], MIDI_NOTES_NUMBER), 1)
+            bar = np.delete(bar, slice(0, active_range[0]), 1)
             result[bar_index][non_empty_programs[track_program]] = np.maximum(
                 result[bar_index][non_empty_programs[track_program]],
                 bar)
@@ -76,7 +87,12 @@ def write_song_to_midi(song, filename):
     song_tracks_to_programs_file = open(os.path.join(DATASET_DIR, "song_tracks_to_programs.pkl"),"rb")
     song_tracks_to_programs = pickle.load(song_tracks_to_programs_file)
     song_tracks_to_programs_file.close()
+    dataset_meta_file = open(os.path.join(DATASET_DIR, "dataset_meta.pkl"), "rb")
+    non_empty_programs, max_song_length, active_range = pickle.load(dataset_meta_file)
+    dataset_meta_file.close()
+
     for track_index, track in enumerate(tracks):
+        track = np.pad(track, ((0, 0),(active_range[0], MIDI_NOTES_NUMBER - active_range[1])), mode='constant', constant_values=0)
         tracks[track_index] = pypianoroll.Track(track,
                                                 program=(song_tracks_to_programs[track_index], 0)
                                                         [song_tracks_to_programs[track_index] == MIDI_DRUM_PROGRAM],
@@ -87,17 +103,21 @@ def write_song_to_midi(song, filename):
 def create_dataset():
     # - song_tracks_to_programs: maps dataset tracks to MIDI programs
     song_paths = get_songs_paths(MUSIC_DIR)
-    non_empty_programs, max_song_length = get_songs_metadata(song_paths)
+    non_empty_programs, max_song_length, active_range = get_songs_metadata(song_paths)
 
     if not os.path.exists(DATASET_DIR):
         os.mkdir(DATASET_DIR)
     for index, path in enumerate(song_paths):
-        song = create_pianoroll(path, non_empty_programs, max_song_length)
+        song = create_pianoroll(path, non_empty_programs, max_song_length, active_range)
         np.savez_compressed(os.path.join(DATASET_DIR, f"song{index}"), song)
 
     dataset_shape_file = open(os.path.join(DATASET_DIR, "dataset_shape.pkl"), "wb")
-    pickle.dump([max_song_length, len(non_empty_programs), QUANTIZATION, MIDI_NOTES_NUMBER], dataset_shape_file)
+    pickle.dump([max_song_length, len(non_empty_programs), QUANTIZATION, active_range[1] - active_range[0]], dataset_shape_file)
     dataset_shape_file.close()
+
+    dataset_meta_file = open(os.path.join(DATASET_DIR, "dataset_meta.pkl"), "wb")
+    pickle.dump([non_empty_programs, max_song_length, active_range], dataset_meta_file)
+    dataset_meta_file.close()
 
     song_tracks_to_programs_file = open(os.path.join(DATASET_DIR, "song_tracks_to_programs.pkl"), "wb")
     song_tracks_to_programs = {v: k for k, v in non_empty_programs.items()}
