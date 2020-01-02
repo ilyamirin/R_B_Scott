@@ -26,7 +26,6 @@ MODEL_DIR = "model"
 individual_enc_1_dim = 1024
 individual_enc_2_dim = 64
 global_enc_1_dim = 32
-batch_size = 1
 latent_dim = 150
 epochs = 80
 
@@ -52,11 +51,6 @@ def sampling(args):
 
 
 def train():
-    config = tf.ConfigProto()
-    config.gpu_options.allow_growth = True
-    session = tf.Session(config=config)
-    set_session(session)
-
     song_length_in_bars, song_tracks, grid_size, midi_notes_number = pypianoroll_midi.get_dataset_shape()
     pianoroll_dim = song_tracks * grid_size * midi_notes_number
     split_proportion = (max(2, round(pypianoroll_midi.get_pianorolls_count() * 0.8)))
