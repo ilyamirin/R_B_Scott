@@ -3,6 +3,7 @@ import os
 import numpy as np
 from argparse import Namespace
 import pickle
+import shutil
 
 QUANTIZATION = 32
 MIDI_PROGRAMS_NUMBER = 128
@@ -108,8 +109,9 @@ def create_dataset():
     song_paths = get_songs_paths(MUSIC_DIR)
     non_empty_programs, min_song_length, active_range = get_songs_metadata(song_paths)
 
-    if not os.path.exists(DATASET_DIR):
-        os.mkdir(DATASET_DIR)
+    shutil.rmtree(DATASET_DIR)
+    os.mkdir(DATASET_DIR)
+
     for index, path in enumerate(song_paths):
         song = create_pianoroll(path, non_empty_programs, min_song_length, active_range)
         np.savez_compressed(os.path.join(DATASET_DIR, f"song{index}"), song)
