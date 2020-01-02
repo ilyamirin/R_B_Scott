@@ -11,6 +11,7 @@ TIME_SIGNATURE = (4, 4)
 MUSIC_DIR = "music"
 DATASET_DIR = "dataset"
 MIDI_DRUM_PROGRAM = -1
+INF = 99999
 
 def get_songs_paths(dir):
     paths = []
@@ -34,7 +35,7 @@ def get_songs_metadata(songs_paths):
     #acknowledge non-empty programs and minimum song length
     non_empty_programs = {}
     non_empty_programs_count = 0
-    max_song_length = 0
+    min_song_length = INF
     active_range = [MIDI_NOTES_NUMBER, 0]
     for path in songs_paths:
         song = read_midi_file(path)
@@ -54,18 +55,20 @@ def get_songs_metadata(songs_paths):
                 else:
                     non_empty_programs[track.program] = non_empty_programs_count
                 non_empty_programs_count += 1
-            max_song_length = max(max_song_length, round(track.pianoroll.shape[0] / QUANTIZATION))
-    return non_empty_programs, max_song_length, active_range
+            min_song_length = min(min_song_length, round(track.pianoroll.shape[0] / QUANTIZATION))
+    return non_empty_programs, min_song_length, active_range
 
-def create_pianoroll(song_path, non_empty_programs, max_song_length, active_range):
+def create_pianoroll(song_path, non_empty_programs, min_song_length, active_range):
     #read song
     #- song: numpy array with shape (song length in bars, song tracks, grid size, midi notes number)
     song = read_midi_file(song_path)
 
     #create 3d piano roll from pypianoroll output
-    result = np.zeros(shape=(max_song_length, len(non_empty_programs), QUANTIZATION, active_range[1] - active_range[0]))
+    result = np.zeros(shape=(min_song_length, len(non_empty_programs), QUANTIZATION, active_range[1] - active_range[0]))
     for track_index, track in enumerate(song.tracks):
         for bar_index, bar in enumerate(np.split(track.pianoroll, indices_or_sections=round(track.pianoroll.shape[0] / QUANTIZATION))):
+            if bar_index >= min_song_length:
+                break
             track_program = (track.program, MIDI_DRUM_PROGRAM)[track.is_drum]
             bar = np.delete(bar, slice(active_range[1], MIDI_NOTES_NUMBER), 1)
             bar = np.delete(bar, slice(0, active_range[0]), 1)
@@ -88,7 +91,7 @@ def write_song_to_midi(song, filename):
     song_tracks_to_programs = pickle.load(song_tracks_to_programs_file)
     song_tracks_to_programs_file.close()
     dataset_meta_file = open(os.path.join(DATASET_DIR, "dataset_meta.pkl"), "rb")
-    non_empty_programs, max_song_length, active_range = pickle.load(dataset_meta_file)
+    non_empty_programs, min_song_length, active_range = pickle.load(dataset_meta_file)
     dataset_meta_file.close()
 
     for track_index, track in enumerate(tracks):
@@ -103,20 +106,20 @@ def write_song_to_midi(song, filename):
 def create_dataset():
     # - song_tracks_to_programs: maps dataset tracks to MIDI programs
     song_paths = get_songs_paths(MUSIC_DIR)
-    non_empty_programs, max_song_length, active_range = get_songs_metadata(song_paths)
+    non_empty_programs, min_song_length, active_range = get_songs_metadata(song_paths)
 
     if not os.path.exists(DATASET_DIR):
         os.mkdir(DATASET_DIR)
     for index, path in enumerate(song_paths):
-        song = create_pianoroll(path, non_empty_programs, max_song_length, active_range)
+        song = create_pianoroll(path, non_empty_programs, min_song_length, active_range)
         np.savez_compressed(os.path.join(DATASET_DIR, f"song{index}"), song)
 
     dataset_shape_file = open(os.path.join(DATASET_DIR, "dataset_shape.pkl"), "wb")
-    pickle.dump([max_song_length, len(non_empty_programs), QUANTIZATION, active_range[1] - active_range[0]], dataset_shape_file)
+    pickle.dump([min_song_length, len(non_empty_programs), QUANTIZATION, active_range[1] - active_range[0]], dataset_shape_file)
     dataset_shape_file.close()
 
     dataset_meta_file = open(os.path.join(DATASET_DIR, "dataset_meta.pkl"), "wb")
-    pickle.dump([non_empty_programs, max_song_length, active_range], dataset_meta_file)
+    pickle.dump([non_empty_programs, min_song_length, active_range], dataset_meta_file)
     dataset_meta_file.close()
 
     song_tracks_to_programs_file = open(os.path.join(DATASET_DIR, "song_tracks_to_programs.pkl"), "wb")
