@@ -23,11 +23,11 @@ from argparse import Namespace
 
 MODEL_DIR = "model"
 
-individual_enc_1_dim = 1024
-individual_enc_2_dim = 64
-global_enc_1_dim = 32
+individual_enc_1_dim = 768
+individual_enc_2_dim = 192
+global_enc_1_dim = 768
 latent_dim = 150
-epochs = 80
+epochs = 1500
 
 Log = logger.Logger('log.txt')
 
@@ -84,7 +84,7 @@ def train():
     x = Dense((song_length_in_bars*individual_enc_2_dim), activation='relu')(x)
     x = Reshape((song_length_in_bars, individual_enc_2_dim))(x)
     x = TimeDistributed(Dense(individual_enc_1_dim, activation='relu'))(x)
-    outputs = Dense(pianoroll_dim, activation='sigmoid')(x)
+    outputs = TimeDistributed(Dense(pianoroll_dim, activation='sigmoid'))(x)
 
     decoder = Model(latent_inputs, outputs, name='decoder')
     plot_model(decoder, to_file='vae_mlp_decoder.png', show_shapes=True)
@@ -140,6 +140,7 @@ def generate_sample():
                                            size=latent_dim)])
     x_decoded = decoder.predict(z_sample)
     medium = (x_decoded.max() + x_decoded.min()) / 2
+    medium = 0.9
     x_decoded[x_decoded >= medium] = 1
     x_decoded[x_decoded < medium] = 0
     #x_decoded = np.around(x_decoded)
@@ -149,4 +150,21 @@ def generate_sample():
                                   meta['grid_size'],
                                   meta['midi_notes_number'])
     pypianoroll_midi.write_song_to_midi(x_decoded, "output.mid")
+    #dataset song repeat
+    encoder = load_model(os.path.join(MODEL_DIR, 'encoder.h5'))
+    song_length_in_bars, song_tracks, grid_size, midi_notes_number = pypianoroll_midi.get_dataset_shape()
+    pianoroll_dim = song_tracks * grid_size * midi_notes_number
+    split_proportion = (max(2, round(pypianoroll_midi.get_pianorolls_count() * 0.8)))
+    train_generator = DataGenerator(0, 0, (song_length_in_bars, pianoroll_dim))
+    x_test_encoded = encoder.predict_generator(train_generator, steps=1)
+    x_decoded = decoder.predict(x_test_encoded)
+    medium = (x_decoded.max() + x_decoded.min()) / 2
+    x_decoded[x_decoded >= medium] = 1
+    x_decoded[x_decoded < medium] = 0
+    x_decoded = (x_decoded * 64)
+    x_decoded = x_decoded.reshape(song_length_in_bars,
+                                  song_tracks,
+                                  grid_size,
+                                  midi_notes_number)
+    pypianoroll_midi.write_song_to_midi(x_decoded, "orig_data.mid")
 
