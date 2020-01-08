@@ -148,9 +148,28 @@ def get_dataset_shape():
     dataset_shape_file = open(os.path.join(DATASET_DIR, "dataset_shape.pkl"), "rb")
     return pickle.load(dataset_shape_file)
 
+def test_midi_module():
+    from data_generator import DataGenerator
+
+    song_length_in_bars, song_tracks, grid_size, midi_notes_number = get_dataset_shape()
+    pianoroll_dim = song_tracks * grid_size * midi_notes_number
+    split_proportion = (max(2, round(get_pianorolls_count() * 0.8)))
+    train_generator = DataGenerator(0, split_proportion, (song_length_in_bars, pianoroll_dim))
+    song = train_generator.__getitem__(0)[0][0]
+    song = (song * 64)
+    meta_file = open(os.path.join("model", "meta.pkl"), "rb")
+    meta = pickle.load(meta_file)
+    meta_file.close()
+    song = song.reshape(meta['song_length_in_bars'],
+                                  meta['song_tracks'],
+                                  meta['grid_size'],
+                                  meta['midi_notes_number'])
+    write_song_to_midi(song, "test_midi_module.mid")
+
 pypianoroll_midi = Namespace(
     read_directory = create_pianoroll,
     read_midi_file = read_midi_file,
     create_dataset = create_dataset,
     load_dataset = get_pianoroll,
+    test_midi_module = test_midi_module,
 )
