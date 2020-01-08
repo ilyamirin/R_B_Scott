@@ -27,7 +27,7 @@ individual_enc_1_dim = 768
 individual_enc_2_dim = 192
 global_enc_1_dim = 768
 latent_dim = 150
-epochs = 1500
+epochs = 1
 
 Log = logger.Logger('log.txt')
 
@@ -103,15 +103,23 @@ def train():
     vae.fit_generator(train_generator, epochs=epochs, validation_data=test_generator)
 
     x_test_encoded = encoder.predict_generator(test_generator)
-
+    boundaries_min = [0 for _ in range(latent_dim)]
+    boundaries_max = [0 for _ in range(latent_dim)]
+    for prediction in x_test_encoded:
+        for song in prediction:
+            for dimension, value in enumerate(song):
+                if (value) > boundaries_max[dimension]:
+                    boundaries_max[dimension] = value
+                if (value) < boundaries_min[dimension]:
+                    boundaries_min[dimension] = value
     save_model(encoder, decoder, vae)
     save_meta({
         'song_length_in_bars': song_length_in_bars,
         'song_tracks': song_tracks,
         'grid_size': grid_size,
         'midi_notes_number': midi_notes_number,
-        'min_sample_in_test_data': np.amin(x_test_encoded),
-        'max_sample_in_test_data': np.amax(x_test_encoded),
+        'boundaries_min': boundaries_min,
+        'boundaries_max': boundaries_max,
     })
 
 def save_meta(meta):
@@ -134,13 +142,12 @@ def generate_sample():
     meta_file = open(os.path.join(MODEL_DIR, "meta.pkl"), "rb")
     meta = pickle.load(meta_file)
     meta_file.close()
-    print("min:{} max:{}".format(meta['min_sample_in_test_data'], meta['max_sample_in_test_data']))
-    z_sample = np.array([np.random.uniform(meta['min_sample_in_test_data'],
-                                           high=meta['max_sample_in_test_data'],
-                                           size=latent_dim)])
+    z_sample = []
+    for i in range(latent_dim):
+        z_sample.append(np.random.uniform(meta['boundaries_min'][i], meta['boundaries_max'][i]))
+    z_sample = np.array([z_sample])
     x_decoded = decoder.predict(z_sample)
     medium = (x_decoded.max() + x_decoded.min()) / 2
-    medium = 0.9
     x_decoded[x_decoded >= medium] = 1
     x_decoded[x_decoded < medium] = 0
     #x_decoded = np.around(x_decoded)
