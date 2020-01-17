@@ -4,8 +4,12 @@ import numpy as np
 from argparse import Namespace
 import pickle
 import shutil
+import configparser
 
-QUANTIZATION = 32
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+QUANTIZATION = config['DEFAULT']['QUANTIZATION']
 MIDI_PROGRAMS_NUMBER = 128
 MIDI_NOTES_NUMBER = 128
 TIME_SIGNATURE = (4, 4)

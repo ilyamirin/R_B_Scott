@@ -19,15 +19,19 @@ import pypianoroll_midi
 from data_generator import DataGenerator
 import pickle
 from argparse import Namespace
+import configparser
 
 
 MODEL_DIR = "model"
 
-individual_enc_1_dim = 768
-individual_enc_2_dim = 192
-global_enc_1_dim = 768
-latent_dim = 150
-epochs = 1
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+individual_enc_1_dim = config['DEFAULT']['individual_enc_1_dim']
+individual_enc_2_dim = config['DEFAULT']['individual_enc_2_dim']
+global_enc_1_dim = config['DEFAULT']['global_enc_1_dim']
+latent_dim = config['DEFAULT']['latent_dim']
+epochs = config['DEFAULT']['epochs']
 
 Log = logger.Logger('log.txt')
 
