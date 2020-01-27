@@ -9,6 +9,7 @@ from keras.utils import plot_model
 from keras import backend as K
 from keras.models import load_model
 from keras.backend.tensorflow_backend import set_session
+from keras.callbacks import TensorBoard
 import tensorflow as tf
 
 import os
@@ -104,7 +105,8 @@ def train():
 
     vae.compile(optimizer='adam')
     plot_model(vae, to_file='vae_mlp.png', show_shapes=True)
-    vae.fit_generator(train_generator, epochs=epochs, validation_data=test_generator)
+    tbCallBack = TensorBoard(log_dir=os.path.join('.', 'Graph'), histogram_freq=0, write_graph=True, write_images=True)
+    vae.fit_generator(train_generator, epochs=epochs, validation_data=test_generator, callbacks=[tbCallBack])
 
     x_test_encoded = encoder.predict_generator(test_generator)
     boundaries_min = [0 for _ in range(latent_dim)]

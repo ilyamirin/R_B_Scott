@@ -12,3 +12,6 @@ You can set some constants in the module:
 | TIME_SIGNATURE | Time signature of dataset; only 4/4 is supported now    |
 | MUSIC_DIR      | Directory where from the parser reads MIDI files        |
 | DATASET_DIR    | Directory where to the parser exports the dataset files |
+
+How to launch TensorBoard (in terminal):
+tensorboard --logdir .\Graph
