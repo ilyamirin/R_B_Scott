@@ -168,9 +168,9 @@ def generate_sample():
     song_length_in_bars, song_tracks, grid_size, midi_notes_number = pypianoroll_midi.get_dataset_shape()
     pianoroll_dim = song_tracks * grid_size * midi_notes_number
     split_proportion = (max(2, round(pypianoroll_midi.get_pianorolls_count() * 0.8)))
-    train_generator = DataGenerator(0, 0, (song_length_in_bars, pianoroll_dim))
-    x_test_encoded = encoder.predict_generator(train_generator, steps=1)
-    x_decoded = decoder.predict(x_test_encoded)
+    train_generator = DataGenerator(0, 1, (song_length_in_bars, pianoroll_dim))
+    x_test_encoded = encoder.predict_generator(train_generator)
+    x_decoded = decoder.predict(x_test_encoded[0])
     medium = (x_decoded.max() + x_decoded.min()) / 2
     x_decoded[x_decoded >= medium] = 1
     x_decoded[x_decoded < medium] = 0
