@@ -181,3 +181,10 @@ def generate_sample():
                                   midi_notes_number)
     pypianoroll_midi.write_song_to_midi(x_decoded, "orig_data.mid")
 
+    #plot
+    train_generator = DataGenerator(0, split_proportion, (song_length_in_bars, pianoroll_dim))
+    x_test_encoded = encoder.predict_generator(train_generator)
+    plt.figure(figsize=(6, 6))
+    plt.scatter(x_test_encoded[0][:, 0], x_test_encoded[0][:, 1])
+    plt.show()
+
