@@ -27,11 +27,11 @@ MODEL_DIR = "model"
 config = configparser.ConfigParser()
 config.read('config.ini')
 
-individual_enc_1_dim = config['DEFAULT']['individual_enc_1_dim']
-individual_enc_2_dim = config['DEFAULT']['individual_enc_2_dim']
-global_enc_1_dim = config['DEFAULT']['global_enc_1_dim']
-latent_dim = config['DEFAULT']['latent_dim']
-epochs = config['DEFAULT']['epochs']
+individual_enc_1_dim = int(config['DEFAULT']['individual_enc_1_dim'])
+individual_enc_2_dim = int(config['DEFAULT']['individual_enc_2_dim'])
+global_enc_1_dim = int(config['DEFAULT']['global_enc_1_dim'])
+latent_dim = int(config['DEFAULT']['latent_dim'])
+epochs = int(config['DEFAULT']['epochs'])
 
 Log = logger.Logger('log.txt')
 
