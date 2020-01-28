@@ -101,7 +101,7 @@ def train():
     xent_loss = binary_crossentropy(inputs, outputs)
     kl_loss = 0.1 * K.mean(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=None)
     vae_loss = xent_loss - kl_loss
-    vae.add_loss(vae_loss)
+    vae.add_loss(xent_loss)
 
     vae.compile(optimizer='adam')
     plot_model(vae, to_file='vae_mlp.png', show_shapes=True)
